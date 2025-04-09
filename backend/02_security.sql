@@ -119,7 +119,48 @@ grant execute on function is_email_available to anon;
  Fonction signup
  **************************************************************/
 
---TODO: à implémenter
+create or replace function 
+    signup(_email text, _name text, _iban text, _password text, _confirm_password text) returns auth.jwt_token as
+$$
+declare
+    result auth.jwt_token;
+begin
+    if not is_email_available(_email) then
+        raise invalid_argument_for_nth_value_function using message = 'This email is already in use';
+    end if;
+    
+    if exists(select 1 from users where users.full_name = _name) then
+        raise invalid_name using message = 'This name is already to use';
+    elseif length(_name) <= 3 then
+        raise invalid_name using message = 'Name lenght must be bigger or equal than 3';
+    end if;
+    
+    if (length(_password) < 8 or _password !~ '[A-Z]' or _password !~ '[0-9]' or _password !~ '[^a-zA-Z0-9]') then
+        raise invalid_password using message = 'Password must be at least 8 char, one digit, one uppercase and one special char';
+    elsif _password <> _confirm_password then
+        raise invalid_password using message = 'Password and confirms password do not match';
+    end if;
+    
+    if _iban is not null and _iban !~ '^BE[0-9]{14}$' then
+        raise exception 'Invalid IBAN format';
+    end if;
+    
+    insert into users(email, password, full_name, iban)
+    values(_email, _password, _name, _iban);
+
+    select auth.sign(row_to_json(r), '94VEF6BGSV4MHACYQYWYZZXILQR7412Z') as token
+    into result
+    from (
+             select 'basic_user' as role,
+                    _email as sub,
+                    extract(epoch from now())::int + 86400 as exp
+         ) r;
+    return result;
+end;
+$$ language plpgsql security definer;
+
+grant execute on function signup to anon;
+
 
 /**************************************************************
  Fonctions utilitaires vàv de la sécurité
