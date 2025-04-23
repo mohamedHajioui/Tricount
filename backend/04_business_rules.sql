@@ -39,6 +39,7 @@ begin
     if New.creator is distinct from OLD.creator then
         Raise exception 'creator information cannot be changed';
     end if;
+    return New;
 end;
 $$ language plpgsql;
 
