@@ -58,3 +58,17 @@ $$
     end;
 $$ language plpgsql security definer;
 grant execute on function check_email_available(text, integer) to anon;
+
+
+create or replace function get_all_users()
+returns setof users as
+$$
+  begin 
+      return query
+        select *
+        from users
+        order by full_name;
+      
+end;
+$$ language plpgsql security definer;
+grant execute on function get_all_users() to authenticated;
