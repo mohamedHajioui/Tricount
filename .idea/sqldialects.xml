@@ -5,7 +5,11 @@
     <file url="file://$PROJECT_DIR$/backend/02_security.sql" dialect="PostgreSQL" />
     <file url="file://$PROJECT_DIR$/backend/03_tables_and_data.sql" dialect="PostgreSQL" />
     <file url="file://$PROJECT_DIR$/backend/04_business_rules.sql" dialect="PostgreSQL" />
+<<<<<<< HEAD
+    <file url="file://$PROJECT_DIR$/backend/05_computations.sql" dialect="PostgreSQL" />
+=======
     <file url="file://$PROJECT_DIR$/backend/06_endpoints.sql" dialect="PostgreSQL" />
+>>>>>>> b0b3b4b9614607107b66b0c871349432ca49e85e
     <file url="PROJECT" dialect="PostgreSQL" />
   </component>
 </project>
