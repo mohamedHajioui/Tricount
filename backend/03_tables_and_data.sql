@@ -12,6 +12,16 @@ create table tricount
     date_hour timestamp default current_timestamp 
 );
 
+drop table if exists operateur;
+drop table if exists depense;
+create table depense(
+    id serial primary key,
+    tricount_id int,
+    title varchar(256) not null ,
+    amount double precision not null,
+    operation_date timestamp default null,
+    initiator int not null,
+    repartition jsonb not null
+);
 
-insert into tricount(title, description, creator, participant) values ('japon','voyage epfc informatique',2,'{3,4,9}')
 
