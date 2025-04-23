@@ -11,3 +11,4 @@ create table tricount
     participant  integer[],
     date_hour timestamp default current_timestamp 
 );
+
