@@ -30,3 +30,22 @@ end;
 $$ language plpgsql security definer;
 grant execute on function get_user_data() to authenticated;
 
+create or replace function check_email_available(email text, user_id integer default 0)
+returns boolean as
+$$
+    begin 
+        if user_id = 0 then 
+            return not exists(
+                select 1 from users where users.email = check_email_available.email
+                
+            );
+        else 
+            return not exists(
+                select 1 from users
+                where users.email = check_email_available.email
+                and users.id <> check_email_available.user_id
+            );
+        end if;
+    end;
+$$ language plpgsql security definer;
+grant execute on function check_email_available(text, integer) to anon;
