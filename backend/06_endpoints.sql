@@ -5,8 +5,10 @@ create or replace function save_tricount(
     save_creator int,
     save_participants integer[]) returns void  as 
     $$
-    begin 
+    begin
+        perform auth.check_logged();
         if save_id = 0 then
+            
             insert into tricount(title, description, participant,creator) values (save_title,save_description,save_participants,save_creator);
         end if;
         if save_id > 0 then
@@ -18,6 +20,13 @@ create or replace function save_tricount(
 $$language plpgsql security definer; 
 
 grant execute on function save_tricount to anon;
+
+
+    
+
+    
+    
+    
 create or replace function get_user_data()
     returns setof users as
 $$

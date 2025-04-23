@@ -78,6 +78,7 @@ create or replace function
 $$
 declare
     role   name;
+    user_id integer;
     result auth.jwt_token;
 begin
     -- check email and password
@@ -88,13 +89,13 @@ begin
         raise invalid_password using message = 'invalid user or password';
     end if;
 
-    select users.role from users where users.email = login.email into role;
-
+    select users.role, users.id from users where users.email = login.email into role, user_id;
     select auth.sign(row_to_json(r), '94VEF6BGSV4MHACYQYWYZZXILQR7412Z') as token
     from (select role                                              as role,
                  email                                             as sub,
+                 user_id                                           as user_id,
                  -- valid for 24 hours
-                 extract(epoch from now())::integer + 24 * 60 * 60 as exp) r
+              extract(epoch from now())::integer + 24 * 60 * 60 as exp) r
     into result;
     return result;
 end;
@@ -169,6 +170,19 @@ create or replace function auth.email()
 $$
 begin
     return current_setting('request.jwt.claims', true)::json ->> 'sub';
+end;
+$$ language plpgsql;
+
+
+/*
+ Retourne l'id de l'utilisateur connecté via JWT
+ */
+
+create or replace function auth.id()
+    returns int as
+$$
+begin
+    return current_setting('request.jwt.claims', true)::json ->> 'user_id';
 end;
 $$ language plpgsql;
 
