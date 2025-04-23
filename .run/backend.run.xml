@@ -4,6 +4,8 @@
     <script-file value="$PROJECT_DIR$/backend/02_security.sql" />
     <script-file value="$PROJECT_DIR$/backend/03_tables_and_data.sql" />
     <script-file value="$PROJECT_DIR$/backend/04_business_rules.sql" />
+    <script-file value="$PROJECT_DIR$/backend/05_computations.sql" />
+    <script-file value="$PROJECT_DIR$/backend/06_endpoints.sql" />
     <script-mode>FILE</script-mode>
     <data-source id="f94b8526-267b-4d4f-8d3f-1f0b06ded15b" />
     <method v="2" />
