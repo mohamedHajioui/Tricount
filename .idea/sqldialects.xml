@@ -3,6 +3,7 @@
   <component name="SqlDialectMappings">
     <file url="file://$PROJECT_DIR$/backend/01_init.sql" dialect="PostgreSQL" />
     <file url="file://$PROJECT_DIR$/backend/02_security.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/backend/03_tables_and_data.sql" dialect="PostgreSQL" />
     <file url="file://$PROJECT_DIR$/backend/04_business_rules.sql" dialect="PostgreSQL" />
 <<<<<<< HEAD
     <file url="file://$PROJECT_DIR$/backend/05_computations.sql" dialect="PostgreSQL" />

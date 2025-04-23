@@ -58,3 +58,9 @@ execute function block_username_update();
 
 
 ------------------------------------------------------------------------------------------------------------------------
+
+alter table depense
+    add constraint title_length check ( length(title) >=3 );
+
+alter table depense
+    add constraint montant_check check ( amount >= 0.01 );
