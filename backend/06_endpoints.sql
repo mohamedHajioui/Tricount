@@ -11,5 +11,5 @@ create or replace function save_tricount(
         
         
     end;
-    
 $$
+

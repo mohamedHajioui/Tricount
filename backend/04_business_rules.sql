@@ -29,13 +29,4 @@ alter table tricount
     add constraint desctiption_length check (length(description) >= 3 or length(description) = 0);
 
 
-
-
-
-
-create trigger prevent_username_change
-    before update on tricount
-    for each row
-execute function block_username_update();
-
 ------------------------------------------------------------------------------------------------------------------------
