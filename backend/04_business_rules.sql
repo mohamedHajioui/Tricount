@@ -29,7 +29,14 @@ alter table tricount
     add constraint desctiption_length check (length(description) >= 3 or length(description) = 0);
 
 
-
+create or replace function block_username_update()
+    returns trigger as $$
+begin
+    if New.creator is distinct from OLD.creator then
+        Raise exception 'creator information cannot be changed';
+    end if;
+end;
+$$ language plpgsql;
 
 
 --Exception lors du changement du nom de l'utilisateurs

@@ -4,10 +4,7 @@
     <file url="file://$PROJECT_DIR$/backend/01_init.sql" dialect="PostgreSQL" />
     <file url="file://$PROJECT_DIR$/backend/02_security.sql" dialect="PostgreSQL" />
     <file url="file://$PROJECT_DIR$/backend/04_business_rules.sql" dialect="PostgreSQL" />
-<<<<<<< HEAD
     <file url="file://$PROJECT_DIR$/backend/06_endpoints.sql" dialect="PostgreSQL" />
-=======
->>>>>>> ebd8b06f77415fb9b7536fa3409e977c20b84345
     <file url="PROJECT" dialect="PostgreSQL" />
   </component>
 </project>
