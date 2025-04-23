@@ -12,4 +12,19 @@ create or replace function save_tricount(
         
     end;
     
+$$ language plpgsql security definer ;
+/****************************************************************
+  fonction get user data
+  ******************************************************************/
+
+create or replace function get_user_data()
+    returns setof users as
 $$
+begin
+    perform auth.check_logged();
+    return query select *
+                 from users
+                 where users.email = auth.email();
+end;
+$$ language plpgsql security definer;
+grant execute on function get_user_data() to authenticated;
