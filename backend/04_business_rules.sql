@@ -64,3 +64,31 @@ alter table depense
 
 alter table depense
     add constraint montant_check check ( amount >= 0.01 );
+
+create or replace function check_inserted_date() returns trigger as 
+    $$
+    declare 
+        tricount_date timestamp;
+    begin 
+        select tricount.date_hour into tricount_date
+        from tricount 
+        where id = NEW.tricount_id;
+        
+        if NEW.operation_date < tricount_date then
+            raise exception 'La date de l operation preccede celle du tricount';
+        end if;
+    end;
+    $$language plpgsql;
+
+create trigger correcte_operation_date
+    before insert or update on tricount
+    for each row 
+execute function check_inserted_date();
+
+
+create or replace function check_initiateur() returns trigger as 
+    $$
+    begin
+        
+    end;
+    $$
