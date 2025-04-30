@@ -21,12 +21,6 @@ $$language plpgsql security definer;
 
 grant execute on function save_tricount to anon;
 
-
-    
-
-    
-    
-    
 create or replace function get_user_data()
     returns setof users as
 $$
@@ -72,3 +66,19 @@ $$
 end;
 $$ language plpgsql security definer;
 grant execute on function get_all_users() to authenticated;
+
+
+create or replace function delete_tricount(tricount_id text)
+    returns void as
+$$
+    declare 
+        v_tricount_id text := tricount_id;
+begin
+    --verifie que l'user est connecté
+    perform auth.check_logged();
+
+    delete from depense where depense.tricount_id = v_tricount_id;
+    delete from part
+end;
+
+$$ language plpgsql;

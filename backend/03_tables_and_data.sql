@@ -24,4 +24,10 @@ create table depense(
     repartition jsonb not null
 );
 
+create table participation (
+    user_id integer not null references users(id) on delete cascade,
+    tricount_id integer not null references tricount(id) on delete cascade,
+    primary key (user_id, tricount_id)
+);
+
 
