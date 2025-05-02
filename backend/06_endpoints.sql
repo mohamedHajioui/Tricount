@@ -78,7 +78,7 @@ begin
     perform auth.check_logged();
 
     delete from depense where depense.tricount_id = v_tricount_id;
-    delete from part
+    --delete from part
 end;
 
 $$ language plpgsql;
