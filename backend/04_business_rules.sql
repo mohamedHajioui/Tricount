@@ -134,3 +134,36 @@ create trigger before_delete_participation
 before delete on participation
 for each row 
 execute procedure check_participation_deletion();
+CREATE OR REPLACE FUNCTION check_repartition_participants()
+    RETURNS TRIGGER AS $$
+DECLARE
+    v_user_id integer;
+BEGIN
+    -- Vérifie qu'il y a au moins une répartition
+    IF jsonb_array_length(NEW.repartition) = 0 THEN
+        RAISE EXCEPTION 'An operation must have at least one repartition';
+    END IF;
+    -- Pour chaque utilisateur dans la répartition
+    FOR v_user_id IN (
+        SELECT (jsonb_array_elements(NEW.repartition)->>'user_id')::integer
+    )
+        LOOP
+            -- Vérifie que l'utilisateur est participant du tricount
+            IF NOT EXISTS (
+                SELECT 1
+                FROM participation p
+                WHERE p.tricount_id = NEW.tricount_id
+                  AND p.user_id = v_user_id
+            ) THEN
+                RAISE EXCEPTION 'L''utilisateur % n''est pas participant du tricount', v_user_id;
+            END IF;
+        END LOOP;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER check_repartition_participants_trigger
+    BEFORE INSERT OR UPDATE ON depense
+    FOR EACH ROW
+EXECUTE FUNCTION check_repartition_participants();
