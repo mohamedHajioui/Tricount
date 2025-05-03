@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../widgets/login_card.dart';
 import 'package:prbd_2425_a07/views/widgets/login_card.dart';
-import '../../providers/auth_providers.dart';
+import '../../providers/auth_service_provider.dart';
 import '../../providers/reset_db_provider.dart'; 
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -17,6 +17,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailCtrl = TextEditingController();
   final _pwdCtrl = TextEditingController();
+  bool _emailDirty = false;
+  bool _pwdDirty = false;
+  bool _triedLogin = false;
 
   @override
   void dispose() {
@@ -26,19 +29,83 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   void _submit() {
+    setState(() => _triedLogin = true);
     if (!_formKey.currentState!.validate()) return;
-    ref.read(authControllerProvider.notifier).login(
+    ref.read(authUserProvider.notifier).login(
       _emailCtrl.text.trim(),
       _pwdCtrl.text.trim(),
     );
   }
 
+  // VALIDATEURS
+  String? _validateEmail(String? v) {
+    if (!_emailDirty) return null;
+    if (v == null || v.trim().isEmpty) return 'Required';
+
+    // Regex simple mais correct pour usage courant
+    final pattern = r'^[\w\.\-]+@([\w\-]+\.)+[\w]{2,4}$';
+    final isValid = RegExp(pattern).hasMatch(v.trim());
+    return isValid ? null : 'Not a valid mail';
+  }
+
+  String? _validatePassword(String? v) {
+    if (!_pwdDirty) return null;
+    if (v == null || v.isEmpty) return 'Required';
+    if (!RegExp(r'[A-Z]').hasMatch(v)) return 'At least one uppercase letter';
+    if (!RegExp(r'[a-z]').hasMatch(v)) return 'At least one lowercase letter';
+    if (!RegExp(r'\d').hasMatch(v)) return 'At least one number';
+    if (!RegExp(r'[!@#\\\$%^&*(),.?\":{}|<>]').hasMatch(v)) {
+      return 'At least one special character';
+    }
+    if (v.length < 8) return 'Minimum 8 characters';
+    return null;
+  }
+  //pour desactiver login
+  bool _formHasErrors() {
+    return _validateEmail(_emailCtrl.text) != null ||
+        _validatePassword(_pwdCtrl.text) != null;
+  }
+
+  void _showErrorDialog() {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Error'),
+        content: Text('Bad credentials'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+        ],
+      ),
+    );
+  }
+
+
+
   @override
   Widget build(BuildContext context) {
     // ---------------- ÉTAT LOGIN ----------------
-    final auth = ref.watch(authControllerProvider);
+    final auth = ref.watch(authUserProvider);
     final bool loadingLogin = auth.isLoading;
-    final String? loginError = auth.whenOrNull(error: (e, _) => e.toString());
+
+    final loginError = ref.watch(authUserProvider).whenOrNull(
+      error: (e, _) => e.toString(),
+    );
+
+    if (_triedLogin && loginError != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _showErrorDialog();
+      });
+      setState(() => _triedLogin = false);
+    }
+
+
 
     // Navigue lorsqu’on est connecté
     auth.whenOrNull(data: (u) {
@@ -75,8 +142,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         border: OutlineInputBorder(),
                       ),
                       keyboardType: TextInputType.emailAddress,
-                      validator: (v) =>
-                      v != null && v.contains('@') ? null : 'Email invalide',
+                      autovalidateMode: AutovalidateMode.always,
+                      onChanged: (_) => setState(() => _emailDirty = true),
+                      validator: _validateEmail
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
@@ -86,12 +154,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         border: OutlineInputBorder(),
                       ),
                       obscureText: true,
-                      validator: (v) =>
-                      v != null && v.length >= 6 ? null : '6 caractères min.',
+                      autovalidateMode: AutovalidateMode.always,
+                      onChanged: (_) => setState(() => _pwdDirty = true),
+                      validator: _validatePassword
                     ),
                     const SizedBox(height: 24),
                     ElevatedButton(
-                      onPressed: loadingLogin ? null : _submit,
+                      onPressed: (loadingLogin || _formHasErrors()) ? null : _submit,
                       style: ElevatedButton.styleFrom(
                         minimumSize: const Size(double.infinity, 48),
                       ),
@@ -103,10 +172,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       )
                           : const Text('Login'),
                     ),
-                    if (loginError != null) ...[
-                      const SizedBox(height: 12),
-                      Text(loginError, style: const TextStyle(color: Colors.red)),
-                    ],
                   ],
                 ),
               ),
@@ -118,7 +183,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               const SizedBox(height: 24),
               LoginCard(
                 onLogin: (email) => ref
-                    .read(authControllerProvider.notifier)
+                    .read(authUserProvider.notifier)
                     .login(email, 'Password1,'),
                 onReset: loadingReset
                     ? null
