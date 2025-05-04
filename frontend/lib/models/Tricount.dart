@@ -1,45 +1,51 @@
-import 'dart:convert';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:http/http.dart' as http;
+// lib/models/tricount.dart
+import 'package:prbd_2425_a07/models/depense.dart';
+import 'package:prbd_2425_a07/models/user.dart';
 
-class Tricount{
+class Tricount {
   final int id;
-  final String  titre;
-  String descsription;
+  final String title;
+  final String? description;
+  final DateTime dateHour;
   final int creator;
-  List<int> participants;
-  final DateTime creation_date;
-  
+  final List<User> participants;
+  final List<Depense> depenses;
+
   Tricount({
     required this.id,
-    required this.titre,
-    this.descsription = "", //le rendre optionnel
+    required this.title,
+    this.description,
+    required this.dateHour,
     required this.creator,
     required this.participants,
-    required this.creation_date
+    required this.depenses,
   });
-  
-  factory Tricount .formJson(Map<String, dynamic> json){
+
+  factory Tricount.fromJson(Map<String, dynamic> json) {
     return Tricount(
-        id: json['id'], 
-        titre: json['titre'], 
-        creator: json['creator'], 
-        participants: json['participants'], 
-        creation_date: json['creation_date']);
-  }       
-  
-  String get tricount_name => titre + descsription;
-  
-  String toString(){return '$id $titre $descsription';}
-  
-  String getTitle(){return this.titre;}
-  
-  String getDescription(){return this.descsription;}
-  
-  int getCreator(){return this.creator;}
-  
-  List<int> getParticipants(){return this.participants;} 
-  
-  DateTime getCreationDate(){return this.creation_date;}
-  
+      id: json['id'],
+      title: json['title'],
+      description: json['description'],
+      dateHour: DateTime.parse(json['created_at']),  // car le backend renvoie 'created_at'
+      creator: json['creator'],
+      participants: (json['participants'] as List)
+          .map((p) => User.fromJson(p))
+          .toList(),
+      depenses: (json['operations'] as List)
+          .map((d) => Depense.fromJson(d))
+          .toList(),
+    );
+  }
+
+  // Méthodes utiles pour les calculs
+  double get totalExpenses =>
+      depenses.fold(0, (sum, depense) => sum + depense.amount);
+
+  // Trouve un participant par son ID
+  User? findParticipant(int userId) =>
+      participants.where((p) => p.id == userId).firstOrNull;  // retourne null si non trouvé
+
+  // Trouve le nom du créateur
+  String get creatorName =>
+      findParticipant(creator)?.fullName ?? 'Unknown';
 }

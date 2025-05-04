@@ -29,6 +29,6 @@ class AuthService {
     final token = row['token'] as String;
     Params.setValue('token', token);
 
-    return User(id: 0, email: email, token: token);
+    return User(fullName : 'Hamza',id: 0, email: email, role : UserRole.admin,token: token);
   }
 }

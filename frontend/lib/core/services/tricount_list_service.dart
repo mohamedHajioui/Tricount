@@ -1,11 +1,9 @@
-
-
 import 'dart:convert';
 
 import 'package:prbd_2425_a07/core/services/api_client.dart';
 import 'package:prbd_2425_a07/models/Tricount.dart';
 
-class tricount_list_server{
+class tricount_list_service{
   Future<List<Tricount>> getTricountList() async{
     final res = await ApiClient.post('get_my_tricounts',anonymous: true);
     
@@ -16,8 +14,8 @@ class tricount_list_server{
     final decoded = jsonDecode(res.body);
     List<Tricount> tricounts = [];
     
-    for (var tricount in decoded){
-      tricounts.add(Tricount.formJson(tricount));
+    for (var tricount in decoded) {
+      tricounts.add(Tricount.fromJson(tricount));
     }
     
     return tricounts;
