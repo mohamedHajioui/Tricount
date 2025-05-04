@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:prbd_2425_a07/views/pages/test_page.dart';
 import 'package:prbd_2425_a07/views/pages/login_screen.dart';
+import 'package:prbd_2425_a07/views/pages/view_tricounts.dart';
 
 class MyApp extends ConsumerWidget {
   const MyApp({super.key});
