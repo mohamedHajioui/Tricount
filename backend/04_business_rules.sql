@@ -57,7 +57,7 @@ execute function block_username_update();
 
 
 
----------------------------------------------depense--------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------
 
 alter table depense
     add constraint title_length check ( length(title) >=3 );
@@ -84,9 +84,6 @@ create trigger correcte_operation_date
     before insert or update on tricount
     for each row
 execute function check_inserted_date();
-
-
------------------------------------------------------------------------------------------------------------------------
 
 create or replace function check_participation_deletion()
 returns trigger as
