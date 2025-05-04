@@ -6,11 +6,17 @@ import 'package:prbd_2425_a07/models/Tricount.dart';
 final tricountservice = Provider<tricount_list_service>((_) => tricount_list_service());
 
 class TricountListNotifyer extends AsyncNotifier<List<Tricount>?>{
-  Future<List<Tricount>?> build() async => null;
+  Future<List<Tricount>> build() async {
+    // Call the service and return the list immediately when this provider is first used
+    return await ref.read(tricountservice).getTricountList();
+  }
   
-  Future<List<Tricount>> getTricountlist() async{
+  Future<void> refreshTriCountList() async{
     state = await AsyncValue.guard(() =>
         ref.read(tricountservice).getTricountList());
-    
   }
+  
 }
+
+final tricountnotifyer =
+AsyncNotifierProvider<TricountListNotifyer, List<Tricount>?>(() => TricountListNotifyer()); 
