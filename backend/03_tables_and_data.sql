@@ -12,11 +12,12 @@ create table tricount
     date_hour timestamp default current_timestamp
 );
 
-drop table if exists operateur;
+
 drop table if exists depense;
+drop table if exists participation;
 create table depense(
                         id serial primary key,
-                        tricount_id int not null references tricount(id) on delete restrict,
+                        tricount_id int not null references tricount(id) on delete cascade,
                         title varchar(256) not null,
                         amount double precision not null,
                         operation_date timestamp not null default current_DATE,  -- date de la dépense

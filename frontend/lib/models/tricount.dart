@@ -28,12 +28,8 @@ class Tricount {
       description: json['description'],
       dateHour: DateTime.parse(json['created_at']),  // car le backend renvoie 'created_at'
       creator: json['creator'],
-      participants: (json['participants'] as List)
-          .map((p) => User.fromJson(p))
-          .toList(),
-      depenses: (json['operations'] as List)
-          .map((d) => Depense.fromJson(d))
-          .toList(),
+      participants: (json['participants'] as List?)?.map((p) => User.fromJson(p)).toList() ?? [],  // Gérer le null
+      depenses: (json['operations'] as List?)?.map((d) => Depense.fromJson(d)).toList() ?? [],    // Gérer le null
     );
   }
 

@@ -49,20 +49,30 @@ select setval('users_id_seq', (select max(id)
 
 create or replace function auth.encrypt_pass() returns trigger as
 $$
+declare
+    hash text;
 begin
-    if tg_op = 'INSERT' or new.password <> old.password then
-        new.password = auth.crypt(new.password, auth.gen_salt('bf'));
+    -- si c'est un INSERT ou si le mot de passe a changé et 
+    -- qu'il n'est pas déjà crypté
+    if tg_op = 'INSERT' or new.password != old.password and
+                           not (new.password ~ '^\$2[aby]\$\d{2}\$[./A-Za-z0-9]{53}$') then
+        -- on crypte le mot de passe
+        hash = auth.crypt(new.password, auth.gen_salt('bf'));
+        update users set password = hash where users.id = new.id;
     end if;
-    return new;
+    return null;
 end
 $$ language plpgsql;
 
 drop trigger if exists encrypt_pass on users;
 create trigger encrypt_pass
-    before insert or update
+    -- on choisit un trigger AFTER pour permettre aux contraintes de check
+    -- de s'exécuter avant le cryptage
+    after insert or update
     on users
     for each row
 execute procedure auth.encrypt_pass();
+
 
 -- met à jour les mots de passe pour forcer le hashage
 -- noinspection SqlWithoutWhere

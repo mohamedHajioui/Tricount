@@ -73,10 +73,10 @@ $$
 declare
     current_user_id integer;
 begin
-    -- Vérifie que l'utilisateur est connecté et récupère son ID
+    
     current_user_id := auth.id();
 
-    -- Normalise le titre (trim et lowercase pour la comparaison)
+   
     title := lower(trim(title));
 
     if tricount_id = 0 then
@@ -115,20 +115,20 @@ declare
     is_admin boolean;
     tricount_creator_id integer;
 begin
-    -- Vérifie que l'utilisateur est connecté
+    
     current_user_id := auth.id();
 
-    -- Vérifie que le tricount existe
+    
     if not exists(select 1 from tricount where id = tricount_id) then
         raise exception 'Tricount non trouvé';
     end if;
 
-    -- Récupère le créateur du tricount
+    
     select creator into tricount_creator_id
     from tricount
     where id = tricount_id;
 
-    -- Vérifie si l'utilisateur est admin
+   
     select role = 'admin' into is_admin
     from users
     where id = current_user_id;
@@ -161,7 +161,7 @@ declare
     current_user_id integer;
     new_operation_id integer;
 begin
-    -- Vérifie que l'utilisateur est connecté
+    
     perform auth.check_logged();
     current_user_id := auth.id();
 
