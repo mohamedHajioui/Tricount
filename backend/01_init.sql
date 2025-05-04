@@ -200,6 +200,60 @@ from (select convert_from(auth.url_decode(r[1]), 'utf8')::json                  
       from regexp_split_to_array(token, '\.') r) jwt
 $$ immutable;
 
+
+/*************************************************************/
+/*
+                RESETE DATABASE
+ */
+/*************************************************************/
+
+create or replace function reset_database()
+    returns void
+    language plpgsql
+    security definer            
+    set search_path = public   
+as $$
+begin
+    
+    truncate table depense        restart identity cascade;
+    truncate table participation  restart identity cascade;
+    truncate table tricount       restart identity cascade;
+    truncate table users          restart identity cascade;
+
+    insert into users (email, password, full_name, role, iban) 
+    values ('bepenelle@epfc.eu',  'Password1,', 'Benoît',   'basic_user', null),
+           ('boverhaegen@epfc.eu','Password1,', 'Boris',    'basic_user', null),
+           ('gedielman@epfc.eu',  'Password1,', 'Geoffrey', 'basic_user', null),
+           ('admin@epfc.eu',      'Password1,', 'Admin',    'admin',      null);
+
+    
+
+    -- Remet la séquence users_id_seq à la bonne valeur
+    perform setval('users_id_seq', (select max(id) from users));
+
+    insert into tricount (title, description, creator, participant)
+    values ('Démo', 'Tricount de démonstration', 1, array[1,2,3,4]);
+
+    -- participer = user 1,2,3,4 à l’unique tricount 1
+    insert into participation (user_id, tricount_id) 
+    values (1,1),(2,1),(3,1),(4,1);
+
+    -- dépense initiale
+    insert into depense (tricount_id, title, amount, initiator, repartition)
+    values (
+               1,
+               'Pizza',
+               40.0,
+               1,
+               '[{"user_id":1,"share":1},{"user_id":2,"share":1},{"user_id":3,"share":1},{"user_id":4,"share":1}]'::jsonb
+           );
+end;
+$$;
+
+grant execute on function reset_database() to anon;
+
+
+
 /**************************************************************/
 /*                                                            */
 /* HELLO WORLD                                                */
