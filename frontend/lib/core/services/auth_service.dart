@@ -31,4 +31,30 @@ class AuthService {
 
     return User(id: 0, email: email, token: token);
   }
+  
+  Future<User> signup(String email, String fullName, String iban, String password) async {
+    final res = await ApiClient.post(
+      'signup',
+      anonymous: true,
+      body: jsonEncode({
+        'email': email,
+        'full_name': fullName,
+        'iban': iban,
+        'password': password,
+        'confirm_password': password,
+      }),
+      headers: {'Prefer': 'params=single-object'},
+    );
+
+    if (res.statusCode != 200) {
+      throw Exception(jsonDecode(res.body)['message']);
+    }
+    final row = (jsonDecode(res.body) as List).first as Map<String, dynamic>;
+    final token = row['token'] as String;
+    Params.setValue('token', token);
+    return User.fromJson(row);
+    
+    
+    
+  }
 }

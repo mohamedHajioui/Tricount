@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../widgets/login_card.dart';
-import 'package:prbd_2425_a07/views/widgets/login_card.dart';
 import '../../providers/auth_service_provider.dart';
 import '../../providers/reset_db_provider.dart'; 
 
