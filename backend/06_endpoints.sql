@@ -53,6 +53,19 @@ $$
 $$ language plpgsql security definer;
 grant execute on function check_email_available(text, integer) to anon;
 
+-- dans ton script init.sql
+create or replace function check_full_name_available(full_name text)
+    returns boolean as
+$$
+begin
+    return not exists(
+        select 1 from users where users.full_name = check_full_name_available.full_name
+    );
+end;
+$$ language plpgsql security definer;
+grant execute on function check_full_name_available(text) to anon;
+
+
 
 create or replace function get_all_users()
 returns setof users as
@@ -65,7 +78,7 @@ $$
       
 end;
 $$ language plpgsql security definer;
-grant execute on function get_all_users() to authenticated;
+grant execute on function get_all_users() to anon;
 
 create or replace function check_tricount_title_available(title text, tricount_id integer default 0)
     returns boolean as

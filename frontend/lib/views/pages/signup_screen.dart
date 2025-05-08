@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../../providers/auth_service_provider.dart';
@@ -7,72 +8,113 @@ class SignupScreen extends ConsumerStatefulWidget {
   const SignupScreen({super.key});
 
   @override
-  ConsumerState<SignupScreen> createState() => SignupScreenState();
+  ConsumerState<SignupScreen> createState() => _SignupScreenState();
 }
 
-class SignupScreenState extends ConsumerState<SignupScreen>{
+class _SignupScreenState extends ConsumerState<SignupScreen> {
   final _formKey = GlobalKey<FormState>();
-  final email = TextEditingController();
-  final fullName = TextEditingController();
-  final iban = TextEditingController();
-  final password = TextEditingController();
-  final confirmPassword = TextEditingController();
-  
-  bool _dirty = false;
-  
+
+  // contrôleurs
+  final emailCtrl      = TextEditingController();
+  final fullNameCtrl   = TextEditingController();
+  final ibanCtrl       = TextEditingController();
+  final pwdCtrl        = TextEditingController();
+  final confirmPwdCtrl = TextEditingController();
+
+  // clés individuelles pour revalider un seul champ
+  final _emailFieldKey = GlobalKey<FormFieldState>();
+  final _nameFieldKey  = GlobalKey<FormFieldState>();
+
+  // états d’erreur asynchrone
+  bool _isEmailAvailable = true;
+  bool _isNameAvailable  = true;
+
+  // debounce
+  Timer? _emailTimer;
+  Timer? _nameTimer;
+
   @override
-  void dispose(){
-    email.dispose();
-    fullName.dispose();
-    iban.dispose();
-    password.dispose();
-    confirmPassword.dispose();
+  void dispose() {
+    emailCtrl.dispose();
+    fullNameCtrl.dispose();
+    ibanCtrl.dispose();
+    pwdCtrl.dispose();
+    confirmPwdCtrl.dispose();
+    _emailTimer?.cancel();
+    _nameTimer?.cancel();
     super.dispose();
   }
 
-  String? validateEmail(String? v) {
-    if (!_dirty) return null;
+  // ──────────────── requêtes disponibilité ────────────────
+  Future<void> _checkEmail(String email) async {
+    final ok = await ref.read(authServiceProvider).checkEmailAvailable(email);
+    if (mounted) setState(() {
+      _isEmailAvailable = ok;
+      _emailFieldKey.currentState?.validate();
+    });
+  }
+
+  Future<void> _checkName(String name) async {
+    final ok = await ref.read(authServiceProvider).checkNameAvailable(name);
+    if (mounted) setState(() {
+      _isNameAvailable = ok;
+      _nameFieldKey.currentState?.validate();
+    });
+  }
+
+  // ───────────────────── validateurs ──────────────────────
+  String? _validateEmail(String? v) {
     if (v == null || v.trim().isEmpty) return 'Required';
-
-    // Regex simple mais correct pour usage courant
-    final pattern = r'^[\w\.\-]+@([\w\-]+\.)+[\w]{2,4}$';
-    final isValid = RegExp(pattern).hasMatch(v.trim());
-    return isValid ? null : 'Not a valid mail';
+    const pat = r'^[\w\.\-]+@([\w\-]+\.)+[\w]{2,4}$';
+    if (!RegExp(pat).hasMatch(v.trim())) return 'Invalid email';
+    if (!_isEmailAvailable) return 'Not available';
+    return null;
   }
 
-  String? validatePassword(String? v) {
-    if (!_dirty) return null;
+  String? _validateName(String? v) {
+    if (v == null || v.trim().length < 3) return 'Name too short';
+    if (!_isNameAvailable) return 'Not available';
+    return null;
+  }
+
+  String? _validateIban(String? v) {
     if (v == null || v.isEmpty) return 'Required';
-    if (!RegExp(r'[A-Z]').hasMatch(v)) return 'At least one uppercase letter';
-    if (!RegExp(r'[a-z]').hasMatch(v)) return 'At least one lowercase letter';
-    if (!RegExp(r'\d').hasMatch(v)) return 'At least one number';
-    if (!RegExp(r'[!@#\\\$%^&*(),.?\":{}|<>]').hasMatch(v)) {
-      return 'At least one special character';
-    }
-    if (v.length < 8) return 'Minimum 8 characters';
+    const pat = r'^BE\d{2}(?: \d{4}){3}$';
+    return RegExp(pat).hasMatch(v) ? null : 'Invalid format';
+  }
+
+  String? _validatePassword(String? v) {
+    if (v == null || v.isEmpty) return 'Required';
+    if (v.length < 8)                        return 'Minimum 8 characters';
+    if (!RegExp(r'[A-Z]').hasMatch(v))       return 'One uppercase letter';
+    if (!RegExp(r'[a-z]').hasMatch(v))       return 'One lowercase letter';
+    if (!RegExp(r'\d').hasMatch(v))          return 'One number';
+    if (!RegExp(r'[!@#\$%^&*(),.?\":{}|<>]').hasMatch(v))
+      return 'One special char';
     return null;
   }
-  
-  String? validateConfirmPwd(String? v){
-    if(!_dirty) return null;
-    if (v == null || v.isEmpty) return 'required';
-    if(v != password.text) return 'password do not match';
+
+  String? _validateConfirmPwd(String? v) {
+    if (v == null || v.isEmpty) return 'Required';
+    if (v != pwdCtrl.text)       return 'Passwords do not match';
     return null;
   }
-  
-  String? validateIban(String? v){
-    if(!_dirty) return null;
-    if(v == null || v.isEmpty) return 'required';
-    const pattern = r'^BE\d{2}(?: \d{4}){3}$';
-    final isValid = RegExp(pattern).hasMatch(v);
-    return isValid ? null : 'invalid format';
+
+  // ───────────────────────── submit ───────────────────────
+  void _submit() {
+    if (!_formKey.currentState!.validate()) return;
+    ref.read(authUserProvider.notifier).signup(
+      emailCtrl.text.trim(),
+      fullNameCtrl.text.trim(),
+      ibanCtrl.text.trim(),
+      pwdCtrl.text.trim(),
+    );
   }
-  
 
   @override
   Widget build(BuildContext context) {
-    final auth = ref.watch(authUserProvider).isLoading;
-    
+    final loading = ref.watch(authUserProvider).isLoading;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Signup'),
@@ -84,71 +126,89 @@ class SignupScreenState extends ConsumerState<SignupScreen>{
           padding: const EdgeInsets.all(24),
           child: Form(
             key: _formKey,
-            autovalidateMode: AutovalidateMode.always,
+            autovalidateMode: AutovalidateMode.onUserInteraction,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                // ────────────── Email ──────────────
                 TextFormField(
-                  controller: email,
-                  decoration: InputDecoration(
+                  key: _emailFieldKey,
+                  controller: emailCtrl,
+                  decoration: const InputDecoration(
                     labelText: 'Email',
                     border: OutlineInputBorder(),
                   ),
-                  onChanged: (_) => setState(() => _dirty = true),
-                  validator: validateEmail,
+                  validator: _validateEmail,
+                  onChanged: (val) {
+                    _emailTimer?.cancel();
+                    if (val.trim().isEmpty) return;
+                    _emailTimer =
+                        Timer(const Duration(milliseconds: 300),
+                                () => _checkEmail(val.trim()));
+                  },
                 ),
                 const SizedBox(height: 16),
+                // ─────────── Full name ────────────
                 TextFormField(
-                  controller: fullName,
-                  decoration: InputDecoration(
+                  key: _nameFieldKey,
+                  controller: fullNameCtrl,
+                  decoration: const InputDecoration(
                     labelText: 'Full Name',
                     border: OutlineInputBorder(),
                   ),
-                  onChanged: (_) => setState(() => _dirty = true),
-                  validator: validateEmail,
+                  validator: _validateName,
+                  onChanged: (val) {
+                    _nameTimer?.cancel();
+                    if (val.trim().isEmpty) return;
+                    _nameTimer =
+                        Timer(const Duration(milliseconds: 300),
+                                () => _checkName(val.trim()));
+                  },
                 ),
                 const SizedBox(height: 16),
+                // ────────────── IBAN ──────────────
                 TextFormField(
-                  controller: iban,
-                  decoration: InputDecoration(
+                  controller: ibanCtrl,
+                  decoration: const InputDecoration(
                     labelText: 'IBAN',
                     border: OutlineInputBorder(),
                   ),
-                  onChanged: (_) => setState(() => _dirty = true),
-                  validator: validateIban,
+                  validator: _validateIban,
                 ),
                 const SizedBox(height: 16),
+                // ─────────── Password ────────────
                 TextFormField(
-                  controller: password,
-                  decoration: InputDecoration(
+                  controller: pwdCtrl,
+                  decoration: const InputDecoration(
                     labelText: 'Password',
                     border: OutlineInputBorder(),
                   ),
-                  onChanged: (_) => setState(() => _dirty = true),
-                  validator: validatePassword,
+                  obscureText: true,
+                  validator: _validatePassword,
                 ),
                 const SizedBox(height: 16),
+                // ───── Confirm password ─────
                 TextFormField(
-                  controller: confirmPassword,
-                  decoration: InputDecoration(
+                  controller: confirmPwdCtrl,
+                  decoration: const InputDecoration(
                     labelText: 'Confirm Password',
                     border: OutlineInputBorder(),
                   ),
-                  onChanged: (_) => setState(() => _dirty = true),
-                  validator: validateConfirmPwd,
+                  obscureText: true,
+                  validator: _validateConfirmPwd,
                 ),
-                
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: loading ? null : _submit,
+                  child: loading
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text('Signup'),
+                ),
               ],
             ),
           ),
         ),
       ),
     );
-    
   }
-
-  
-  
-  
-  
 }
