@@ -13,7 +13,6 @@ class SignupScreen extends ConsumerStatefulWidget {
 
 class _SignupScreenState extends ConsumerState<SignupScreen> {
   final _formKey = GlobalKey<FormState>();
-
   // contrôleurs
   final emailCtrl      = TextEditingController();
   final fullNameCtrl   = TextEditingController();
