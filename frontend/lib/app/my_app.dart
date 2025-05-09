@@ -18,6 +18,7 @@ class MyApp extends ConsumerWidget {
       initialRoute: '/login',
       routes: {
         '/login': (context) => LoginScreen(),
+        '/tricounts': (context) => TricountListPage(), 
       },
     );
   }

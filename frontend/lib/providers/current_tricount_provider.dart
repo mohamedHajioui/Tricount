@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:prbd_2425_a07/models/repartition.dart';
-import 'package:prbd_2425_a07/models/tricount.dart';
+import 'package:prbd_2425_a07/models/Tricount.dart';
 import 'package:prbd_2425_a07/core/services/tricount_list_service.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../providers/auth_service_provider.dart';

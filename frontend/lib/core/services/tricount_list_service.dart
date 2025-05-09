@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:prbd_2425_a07/core/services/api_client.dart';
-import 'package:prbd_2425_a07/models/tricount.dart';
+import 'package:prbd_2425_a07/models/Tricount.dart';
 
 class tricount_list_service {
   Future<List<Tricount>> getTricountList() async {

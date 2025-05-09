@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:prbd_2425_a07/models/Tricount.dart';
 import 'package:prbd_2425_a07/providers/tricount_list_provider.dart';
-import '../widgets/tricound_card.dart'; // Your TricountCard widget
+import '../widgets/tricound_card.dart';
 
 class TricountListPage extends ConsumerWidget {
   static const routeName = '/tricounts';
@@ -22,7 +22,7 @@ class TricountListPage extends ConsumerWidget {
 
           return ListView(
             children: tricounts.map((t) {
-              return TricountCard(title: t.titre);
+              return TricountCard(tricount: t);
             }).toList(),
           );
         },

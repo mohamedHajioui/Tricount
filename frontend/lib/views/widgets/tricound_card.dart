@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:prbd_2425_a07/models/Tricount.dart';
 
 class TricountCard extends StatelessWidget {
-  final String title;
+  final Tricount tricount;
 
   const TricountCard({
     Key? key,
-    required this.title,
+    required this.tricount,
   }) : super(key: key);
 
   @override
@@ -28,13 +29,20 @@ class TricountCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            title,
+            tricount.title, // ✅ Show the title
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           SizedBox(height: 8),
-          
+          Text(
+            tricount.description ?? "No description", // ✅ Show description or fallback
+            style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+          ),
         ],
       ),
     );
   }
+
+
+
 }
+
