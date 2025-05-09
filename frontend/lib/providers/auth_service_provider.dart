@@ -13,6 +13,8 @@ class AuthUserNotifier extends AsyncNotifier<User?> {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() =>
         ref.read(authServiceProvider).login(email, pwd));
+    
+    
   }
 
   void logout() => state = const AsyncData<User?>(null);

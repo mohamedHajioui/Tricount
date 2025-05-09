@@ -33,6 +33,8 @@ class AuthService {  // Ajoute la classe !
 
     Params.setValue('token', token);
 
+
+
     return User(
         id: decodedToken['user_id'] as int,
         email: decodedToken['sub'] as String,  // 'sub' contient l'email

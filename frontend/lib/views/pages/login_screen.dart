@@ -182,9 +182,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               ),
               const SizedBox(height: 24),
               LoginCard(
-                onLogin: (email) => ref
-                    .read(authUserProvider.notifier)
-                    .login(email, 'Password1,'),
+                onLogin: (email) async {
+                  await ref.read(authUserProvider.notifier).login(email, 'Password1,');
+                  final user = ref.read(authUserProvider).value;
+
+                  if (user != null && context.mounted) {
+                    Navigator.pushReplacementNamed(context, '/tricounts');
+                  }
+                },
+
                 onReset: loadingReset
                     ? null
                     : () => ref
