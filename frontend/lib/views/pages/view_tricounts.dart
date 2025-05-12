@@ -63,7 +63,7 @@ class TricountListPage extends ConsumerWidget {
               title: Text('Logout'),
               onTap: () {
                 ref.read(authUserProvider.notifier).logout();
-                Navigator.pushReplacementNamed(context, '/tricounts');
+                Navigator.pushReplacementNamed(context, '/login');
               },
             ),
           ],
