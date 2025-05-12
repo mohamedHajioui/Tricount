@@ -23,7 +23,7 @@ create table depense(
                         operation_date timestamp not null default current_DATE,  -- date de la dépense
                         created_at timestamp not null default current_timestamp,      -- date de création
                         initiator int not null,
-                        repartition jsonb not null
+                        repartition jsonb
 );
 
 create table participation (
