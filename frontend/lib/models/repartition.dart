@@ -1,6 +1,6 @@
 class Repartition {
   final int user;
-  final int weight;
+  final int? weight;
 
   Repartition({
     required this.user,

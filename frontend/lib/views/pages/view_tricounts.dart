@@ -5,6 +5,8 @@ import 'package:prbd_2425_a07/providers/auth_service_provider.dart';
 import 'package:prbd_2425_a07/providers/tricount_list_provider.dart';
 import '../widgets/tricound_card.dart';
 import 'package:prbd_2425_a07/providers/theme_provider.dart';
+import 'package:prbd_2425_a07/providers/reset_db_provider.dart';
+
 import 'package:prbd_2425_a07/core/services/auth_service.dart';
 
 class TricountListPage extends ConsumerWidget {
@@ -14,6 +16,9 @@ class TricountListPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tricountsAsync = ref.watch(tricountnotifyer);
+    final reset = ref.watch(resetDbControllerProvider);
+    final bool loadingReset = reset.isLoading;
+
 
     return Scaffold(
       appBar: AppBar(
@@ -57,7 +62,21 @@ class TricountListPage extends ConsumerWidget {
                 );
               },
             ),
-
+            
+            ListTile(
+              leading: Icon(Icons.recycling),
+              title: Text('Reset Database'),
+              onTap: loadingReset
+                  ? null
+                  : () => ref.read(resetDbControllerProvider.notifier).reset(context),
+              trailing: loadingReset
+                  ? SizedBox(
+                height: 20,
+                width: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+                  : null,
+            ),
             ListTile(
               leading: Icon(Icons.logout),
               title: Text('Logout'),
@@ -66,6 +85,7 @@ class TricountListPage extends ConsumerWidget {
                 Navigator.pushReplacementNamed(context, '/login');
               },
             ),
+
           ],
         ),
       ),

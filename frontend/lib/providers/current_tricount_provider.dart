@@ -57,7 +57,7 @@ class CurrentTricountNotifier extends ChangeNotifier {
     
     return _tricount!.depenses.fold(0.0, (sum, dep) {
       // Calculer le poids total
-      final totalWeight = dep.repartitions.fold(0, (sum, r) => sum + r.weight);
+      final totalWeight = dep.repartitions.fold(0, (sum, r) => sum + (r.weight??0));
       print('Total weight: $totalWeight');
 
       // Trouver le poids de l'utilisateur courant
@@ -66,10 +66,10 @@ class CurrentTricountNotifier extends ChangeNotifier {
           orElse: () => Repartition(user: userId, weight: 0));
       print('User weight: ${userRepartition.weight}');
       print('Amount: ${dep.amount}');
-      print('Part: ${dep.amount * userRepartition.weight / totalWeight}');
+      print('Part: ${dep.amount * (userRepartition.weight??0) / totalWeight}');
 
       // Calculer sa part
-      return sum + (dep.amount * userRepartition.weight / totalWeight);
+      return sum + (dep.amount * (userRepartition.weight??0) / totalWeight);
       
     });
     

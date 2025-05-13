@@ -35,12 +35,12 @@ class Depense {
 
   // Méthodes utiles
   double getPartAmount(int userId) {
-    final totalWeight = repartitions.fold(0, (sum, r) => sum + r.weight);
+    final totalWeight = repartitions.fold(0, (sum, r) => sum + (r.weight ?? 0));
     final userRepartition = repartitions.firstWhere(
           (r) => r.user == userId,
       orElse: () => Repartition(user: userId, weight: 0),
     );
-    return (amount * userRepartition.weight) / totalWeight;
+    return (amount * (userRepartition.weight??0)) / totalWeight;
   }
 
   bool isParticipant(int userId) =>
