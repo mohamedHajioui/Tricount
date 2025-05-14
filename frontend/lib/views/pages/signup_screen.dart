@@ -89,10 +89,10 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
 
   /* ---------- submit ---------- */
   bool get _canSubmit =>
-      _validateEmail(emailCtrl.text)        == null &&
-          _validateName(fullNameCtrl.text)      == null &&
-          _validateIban(ibanCtrl.text)          == null &&
-          _validatePassword(pwdCtrl.text)       == null &&
+      _validateEmail(emailCtrl.text) == null &&
+          _validateName(fullNameCtrl.text) == null &&
+          _validateIban(ibanCtrl.text) == null &&
+          _validatePassword(pwdCtrl.text)  == null &&
           _validateConfirmPwd(confirmPwdCtrl.text) == null;
 
   void _submit() {
