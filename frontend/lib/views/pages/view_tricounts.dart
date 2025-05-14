@@ -27,7 +27,9 @@ class TricountListPage extends ConsumerWidget {
         title: Text('My Tricounts'),
         actions: [
           IconButton(
-            onPressed: () {}, // + button
+            onPressed: () {
+              Navigator.pushReplacementNamed(context, '/addtricount');
+            }, // + button
             icon: Icon(Icons.add),
           ),
           IconButton(
