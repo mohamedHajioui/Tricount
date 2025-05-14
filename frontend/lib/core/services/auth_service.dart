@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'package:flutter/cupertino.dart';
+
 import 'api_client.dart';
 import 'package:prbd_2425_a07/models/user.dart';
 import '../tools/params.dart';
@@ -32,26 +34,30 @@ class AuthService {
   }
 
   Future<User> signup(String email, String fullName, String iban, String password) async {
+    final ibanValue = iban.isEmpty ? null : iban;
     final res = await ApiClient.post(
       'signup',
       anonymous: true,
       body: jsonEncode({
         'email': email,
         'full_name': fullName,
-        'iban': iban,
+        'iban': ibanValue,
         'password': password,
         'confirm_password': password,
       }),
-      headers: {'Prefer': 'params=single-object'},
     );
+    debugPrint('HTTP ${res.statusCode}  ${res.body}');
+
 
     if (res.statusCode != 200) {
       throw Exception(jsonDecode(res.body)['message']);
     }
+    
     final row = (jsonDecode(res.body) as List).first as Map<String, dynamic>;
     final token = row['token'] as String;
     Params.setValue('token', token);
-    print('token$token');
+    debugPrint('signup token = $token');
+    debugPrint('BODY = ${res.body}');
     return User.fromJson(row);
   }
 

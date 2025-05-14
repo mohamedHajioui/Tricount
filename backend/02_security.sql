@@ -238,6 +238,9 @@ begin
 end
 $$ language plpgsql;
 
+select *
+from users;
+
 /*
  Lors des tests, permet de simuler une connexion anonyme
  */
