@@ -1,6 +1,6 @@
 
 
-drop table if exists tricount;
+DROP TABLE IF EXISTS tricount CASCADE;
 
 create table tricount
 (
@@ -44,7 +44,7 @@ VALUES
     (3, 'Licences logicielles', 300.0, '2025-05-03', 3, '[{"user_id": 2, "weight": 2}, {"user_id": 5, "weight": 1}]');
 
 
-
+drop table if exists participation;
 create table participation (
                                user_id integer not null references users(id) on delete cascade,
                                tricount_id integer not null references tricount(id) on delete cascade,
