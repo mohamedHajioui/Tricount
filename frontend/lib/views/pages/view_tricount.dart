@@ -178,28 +178,40 @@ class _TricountViewState extends ConsumerState<TricountView> {
         children: [
           Padding(
             padding: const EdgeInsets.all(8.0),
-            child: SizedBox(
-              width: double.infinity, // Prend toute la largeur disponible
-              child: TextButton.icon(
-                onPressed: () {
-                  // TODO: Implémenter la vue des balances
-                },
-                icon: const Icon(Icons.compare_arrows, size: 16, color: Colors.white),
-                label: const Text(
-                  'View Balance',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 22,
-                  ),
+            child: TextButton(
+              onPressed: tricount.depenses.isEmpty
+                  ? null  // Désactive le bouton s'il n'y a pas de dépenses
+                  : () {
+                // TODO: Implémenter la vue des balances
+              },
+              style: TextButton.styleFrom(
+                backgroundColor: tricount.depenses.isEmpty
+                    ? Colors.grey[300]  // Gris clair si pas de dépenses
+                    : Color(0xFF4CAF50),  // Vert normal si des dépenses existent
+                padding: const EdgeInsets.symmetric(vertical: 15),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                style: TextButton.styleFrom(
-                  backgroundColor: Color(0xFF4CAF50), // Vert exact comme dans l'image
-                  padding: const EdgeInsets.symmetric(vertical: 20),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+                // La couleur du texte et de l'icône s'adaptera automatiquement
+                // quand le bouton est désactivé (onPressed: null)
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.compare_arrows,
+                    size: 16,
+                    color: tricount.depenses.isEmpty ? Colors.grey[600] : Colors.white,
                   ),
-                  alignment: Alignment.center, // Assure que le contenu est centré horizontalement
-                ),
+                  SizedBox(width: 8),
+                  Text(
+                    'View Balance',
+                    style: TextStyle(
+                      color: tricount.depenses.isEmpty ? Colors.grey[600] : Colors.white,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
