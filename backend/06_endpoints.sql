@@ -197,8 +197,8 @@ grant execute on function delete_tricount(integer) to authenticated;
 
 
 create or replace function save_operation(
-    depense_id integer,
-    tricount_id integer,  -- Paramètre de la fonction
+    id integer,
+    tricount_id integer,
     title text,
     amount double precision,
     initiator integer,
@@ -211,10 +211,14 @@ declare
     current_user_id integer;
     new_operation_id integer;
     participant_ids integer[];
-    current_tricount_id integer;  -- Nouvelle variable distincte
+    current_tricount_id integer;
+    depense_id integer; -- Variable locale pour éviter l'ambiguïté
 begin
     perform auth.check_logged();
     current_user_id := auth.id();
+
+    -- Assignez la valeur du paramètre id à la variable locale
+    depense_id := id;
 
     -- Extraire les IDs des utilisateurs de la répartition
     with users_in_repartition as (
@@ -224,10 +228,8 @@ begin
     select array_agg(user_id) into participant_ids
     from users_in_repartition;
 
-   
-    if depense_id = 0 then
-        
 
+    if depense_id = 0 then
         -- Ajouter l'initiateur à la liste des participants s'il n'y est pas déjà
         if not (initiator = any(participant_ids)) then
             participant_ids := array_append(participant_ids, initiator);
@@ -243,9 +245,9 @@ begin
         set participant = array(
                 select distinct unnest(array_cat(participant, participant_ids))
                 from tricount
-                where id = save_operation.tricount_id
+                where tricount.id = save_operation.tricount_id
                           )
-        where id = save_operation.tricount_id;
+        where tricount.id = save_operation.tricount_id;
 
         insert into depense (
             tricount_id,
@@ -261,7 +263,7 @@ begin
                      coalesce(operation_date, current_timestamp),
                      initiator,
                      repartitions
-                 ) returning id into new_operation_id;
+                 ) returning depense.id into new_operation_id;
 
         return new_operation_id;
     else
@@ -285,9 +287,9 @@ begin
         set participant = array(
                 select distinct unnest(array_cat(participant, participant_ids))
                 from tricount
-                where id = current_tricount_id
+                where tricount.id = current_tricount_id
                           )
-        where id = current_tricount_id;
+        where tricount.id = current_tricount_id;
 
         update depense set
                            title = trim(save_operation.title),
@@ -295,9 +297,9 @@ begin
                            operation_date = coalesce(save_operation.operation_date, current_timestamp),
                            initiator = save_operation.initiator,
                            repartition = save_operation.repartitions
-        where id = save_operation.depense_id;
+        where depense.id = depense_id;
 
-        return save_operation.depense_id;
+        return depense_id;
     end if;
 end;
 $$ language plpgsql security definer;
@@ -311,7 +313,6 @@ grant execute on function save_operation(
     jsonb,      -- repartitions
     timestamp   -- operation_date
     ) to authenticated;
-
 create or replace function delete_operation(operation_id integer)
     returns void as $$
 declare
@@ -479,7 +480,7 @@ begin
                                           -- Transform repartition format
                                           select json_agg(
                                                          json_build_object(
-                                                                 'user', (rep->>'user_id')::integer,
+                                                                 'user', (rep->>'user')::integer,
                                                                  'weight', (rep->>'weight')::integer
                                                          )
                                                  )

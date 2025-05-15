@@ -146,7 +146,7 @@ BEGIN
     END IF;
     -- Pour chaque utilisateur dans la répartition
     FOR v_user_id IN (
-        SELECT (jsonb_array_elements(NEW.repartition)->>'user_id')::integer
+        SELECT (jsonb_array_elements(NEW.repartition)->>'user')::integer
     )
         LOOP
             -- Vérifie que l'utilisateur est participant du tricount
