@@ -1,12 +1,13 @@
 import 'dart:convert';
 import 'package:flutter/cupertino.dart';
-
 import 'api_client.dart';
+import 'package:prbd_2425_a07/core/services/api_client.dart';
+import 'package:prbd_2425_a07/core/tools/params.dart';
 import 'package:prbd_2425_a07/models/user.dart';
-import '../tools/params.dart';
+import 'package:jwt_decoder/jwt_decoder.dart';
 
-class AuthService {
-  //Retourne l'utilisateur + stocke le token
+
+class AuthService {  // Ajoute la classe !
   Future<User> login(String email, String password) async {
     final res = await ApiClient.post(
       'login',
@@ -28,9 +29,21 @@ class AuthService {
         : (decoded as Map<String, dynamic>);
 
     final token = row['token'] as String;
-    Params.setValue('token', token);
 
-    return User(id: 0, email: email, token: token, fullName: '');
+    // Décoder le token pour obtenir les informations de l'utilisateur
+    final Map<String, dynamic> decodedToken = JwtDecoder.decode(token);
+    
+
+    Params.setValue('token', token);
+    
+
+    return User(
+        id: decodedToken['user_id'] as int,
+        email: decodedToken['sub'] as String,  // 'sub' contient l'email
+        fullName: email.split('@')[0],  
+        role: decodedToken['role'] == 'admin' ? UserRole.admin : UserRole.basic_user,
+        token: token
+    );
   }
 
   Future<User> signup(String email, String fullName, String iban, String password) async {

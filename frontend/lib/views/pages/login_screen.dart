@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../widgets/login_card.dart';
 import '../../providers/auth_service_provider.dart';
-import '../../providers/reset_db_provider.dart'; 
+import '../../providers/reset_db_provider.dart';
+
+
 
 class LoginScreen extends ConsumerStatefulWidget {
   static const routeName = '/login';
@@ -181,9 +183,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               ),
               const SizedBox(height: 24),
               LoginCard(
-                onLogin: (email) => ref
-                    .read(authUserProvider.notifier)
-                    .login(email, 'Password1,'),
+                onLogin: (email) async {
+                  await ref.read(authUserProvider.notifier).login(email, 'Password1,');
+                  final user = ref.read(authUserProvider).value;
+
+                  if (user != null && context.mounted) {
+                    Navigator.pushReplacementNamed(context, '/tricounts');
+                  }
+                },
+
                 onReset: loadingReset
                     ? null
                     : () => ref
