@@ -12,6 +12,7 @@ create table tricount
     date_hour timestamp default current_timestamp
 );
 
+<<<<<<< HEAD
 insert into tricount(id, title, description, creator, participant, date_hour)
 values (1, 'Colruyt', 'Courses', 2, ARRAY[1, 4, 2, 5], '2025-05-10'),
    (2, 'Voyage Italie', 'Depenses de tout le voyage', 1, ARRAY[1, 2, 3, 4], '2025-05-13'),
@@ -27,6 +28,20 @@ CREATE TABLE depense (
                          created_at TIMESTAMP NOT NULL DEFAULT current_timestamp, -- date d'encodage
                          initiator INT NOT NULL,
                          repartition JSONB NOT NULL
+=======
+
+drop table if exists depense;
+drop table if exists participation;
+create table depense(
+                        id serial primary key,
+                        tricount_id int not null references tricount(id) on delete cascade,
+                        title varchar(256) not null,
+                        amount double precision not null,
+                        operation_date timestamp not null default current_DATE,  -- date de la dépense
+                        created_at timestamp not null default current_timestamp,      -- date de création
+                        initiator int not null,
+                        repartition jsonb
+>>>>>>> feat_tricountlist
 );
 
 INSERT INTO depense(tricount_id, title, amount, operation_date, initiator, repartition)

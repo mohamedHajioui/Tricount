@@ -3,23 +3,73 @@ create or replace function save_tricount(
     save_title text,
     save_description text,
     save_creator int,
-    save_participants integer[]) returns void  as 
-    $$
-    begin
-        perform auth.check_logged();
-        if save_id = 0 then
-            
-            insert into tricount(title, description, participant,creator) values (save_title,save_description,save_participants,save_creator);
-        end if;
-        if save_id > 0 then
-            update tricount set title = save_title , description = save_description , participant = save_participants
-                            where id = save_id;
-        end if;
-    end;
-    
-$$language plpgsql security definer; 
+    save_participants integer[]) returns int as
+$$
+declare
+    current_user_id integer;
+    new_tricount_id integer;
+begin
+    perform auth.check_logged();
+    current_user_id := auth.id();
 
-grant execute on function save_tricount to authenticated;
+    -- Cas création (id = 0)
+    if save_id = 0 then
+        -- Insérer dans tricount
+        insert into tricount(title, description, participant, creator)
+        values (save_title, save_description, save_participants, save_creator)
+        returning id into new_tricount_id;
+
+        -- Ajouter le créateur comme participant s'il n'est pas déjà inclus
+        if not (save_creator = any(save_participants)) then
+            insert into participation(user_id, tricount_id)
+            values (save_creator, new_tricount_id);
+        end if;
+
+        -- Ajouter tous les participants dans la table participation
+        if save_participants is not null and array_length(save_participants, 1) > 0 then
+            insert into participation(user_id, tricount_id)
+            select unnest(save_participants), new_tricount_id
+            on conflict do nothing;
+        end if;
+
+        return new_tricount_id;
+    else
+        -- Cas modification (id > 0)
+        -- Vérifier que l'utilisateur a le droit de modifier ce tricount
+        if not exists (
+            select 1 from tricount
+            where id = save_id
+              and (creator = current_user_id or current_user_id = any(participant))
+        ) then
+            raise exception 'Accès non autorisé à ce tricount';
+        end if;
+
+        -- Mettre à jour le tricount
+        update tricount
+        set title = save_title,
+            description = save_description,
+            participant = save_participants
+        where id = save_id;
+
+        -- Supprimer les participations qui ne sont plus dans le tableau
+        delete from participation
+        where tricount_id = save_id
+          and not (user_id = any(save_participants));
+
+        -- Ajouter les nouvelles participations
+        if save_participants is not null and array_length(save_participants, 1) > 0 then
+            insert into participation(user_id, tricount_id)
+            select unnest(save_participants), save_id
+            on conflict do nothing;
+        end if;
+
+        return save_id;
+    end if;
+end;
+$$language plpgsql security definer;
+DROP FUNCTION save_tricount(integer,text,text,integer,integer[]);
+
+grant execute on function save_tricount(int, text, text, int, integer[]) to authenticated;
 
 create or replace function get_user_data()
     returns setof users as
@@ -86,10 +136,10 @@ $$
 declare
     current_user_id integer;
 begin
-    -- Vérifie que l'utilisateur est connecté et récupère son ID
+    
     current_user_id := auth.id();
 
-    -- Normalise le titre (trim et lowercase pour la comparaison)
+   
     title := lower(trim(title));
 
     if tricount_id = 0 then
@@ -128,20 +178,20 @@ declare
     is_admin boolean;
     tricount_creator_id integer;
 begin
-    -- Vérifie que l'utilisateur est connecté
+    
     current_user_id := auth.id();
 
-    -- Vérifie que le tricount existe
+    
     if not exists(select 1 from tricount where id = tricount_id) then
         raise exception 'Tricount non trouvé';
     end if;
 
-    -- Récupère le créateur du tricount
+    
     select creator into tricount_creator_id
     from tricount
     where id = tricount_id;
 
-    -- Vérifie si l'utilisateur est admin
+   
     select role = 'admin' into is_admin
     from users
     where id = current_user_id;
@@ -160,42 +210,58 @@ grant execute on function delete_tricount(integer) to authenticated;
 
 
 create or replace function save_operation(
-    depense_id integer,              -- requis (0 pour création)
-    tricount_id integer,     -- requis pour création
-    title text,              -- requis
-    amount double precision, -- requis
-    initiator integer,       -- requis
-    repartitions jsonb,      -- requis et non vide
-    operation_date timestamp default null  -- seul paramètre optionnel
+    id integer,
+    tricount_id integer,
+    title text,
+    amount double precision,
+    initiator integer,
+    repartitions jsonb,
+    operation_date timestamp default null
 )
     returns integer as
 $$
 declare
     current_user_id integer;
     new_operation_id integer;
+    participant_ids integer[];
+    current_tricount_id integer;
+    depense_id integer; -- Variable locale pour éviter l'ambiguïté
 begin
-    -- Vérifie que l'utilisateur est connecté
     perform auth.check_logged();
     current_user_id := auth.id();
 
-    -- Cas création (id = 0)
+    -- Assignez la valeur du paramètre id à la variable locale
+    depense_id := id;
+
+    -- Extraire les IDs des utilisateurs de la répartition
+    with users_in_repartition as (
+        select ((rep->>'user')::integer) as user_id
+        from jsonb_array_elements(repartitions) rep
+    )
+    select array_agg(user_id) into participant_ids
+    from users_in_repartition;
+
+
     if depense_id = 0 then
-        -- Vérifie que tricount_id est fourni pour une création
-        if tricount_id is null then
-            raise exception 'tricount_id est requis pour une création';
+        -- Ajouter l'initiateur à la liste des participants s'il n'y est pas déjà
+        if not (initiator = any(participant_ids)) then
+            participant_ids := array_append(participant_ids, initiator);
         end if;
 
-        -- Vérifie que l'utilisateur a accès au tricount
-        if not exists (
-            select 1
-            from participation
-            where participation.tricount_id = save_operation.tricount_id
-              and user_id = current_user_id
-        ) then
-            raise exception 'Accès non autorisé à ce tricount';
-        end if;
+        -- Ajouter les participants à la table participation
+        insert into participation(user_id, tricount_id)
+        select unnest(participant_ids), save_operation.tricount_id
+        on conflict do nothing;
 
-        -- Insertion nouvelle dépense
+        -- Mettre à jour le tableau participant de la table tricount
+        update tricount
+        set participant = array(
+                select distinct unnest(array_cat(participant, participant_ids))
+                from tricount
+                where tricount.id = save_operation.tricount_id
+                          )
+        where tricount.id = save_operation.tricount_id;
+
         insert into depense (
             tricount_id,
             title,
@@ -210,38 +276,43 @@ begin
                      coalesce(operation_date, current_timestamp),
                      initiator,
                      repartitions
-                 ) returning id into new_operation_id;
+                 ) returning depense.id into new_operation_id;
 
         return new_operation_id;
-
-        -- Cas modification (id > 0)
     else
-        -- Vérifie que la dépense existe
-        if not exists (select 1 from depense where depense.id = save_operation.depense_id) then
-            raise exception 'Dépense non trouvée';
+        -- Ajouter l'initiateur à la liste des participants s'il n'y est pas déjà
+        if not (initiator = any(participant_ids)) then
+            participant_ids := array_append(participant_ids, initiator);
         end if;
 
-        -- Vérifie que l'utilisateur a accès à cette dépense
-        if not exists (
-            select 1
-            from depense d
-                     join participation p on d.tricount_id = p.tricount_id
-            where d.id = save_operation.depense_id
-              and p.user_id = current_user_id
-        ) then
-            raise exception 'Accès non autorisé à cette dépense';
-        end if;
+        -- Récupérer le tricount_id associé à cette dépense
+        select d.tricount_id into current_tricount_id
+        from depense d
+        where d.id = depense_id;
 
-        -- Mise à jour de la dépense
+        -- Ajouter les participants à la table participation
+        insert into participation(user_id, tricount_id)
+        select unnest(participant_ids), current_tricount_id
+        on conflict do nothing;
+
+        -- Mettre à jour le tableau participant de la table tricount
+        update tricount
+        set participant = array(
+                select distinct unnest(array_cat(participant, participant_ids))
+                from tricount
+                where tricount.id = current_tricount_id
+                          )
+        where tricount.id = current_tricount_id;
+
         update depense set
                            title = trim(save_operation.title),
                            amount = save_operation.amount,
                            operation_date = coalesce(save_operation.operation_date, current_timestamp),
                            initiator = save_operation.initiator,
                            repartition = save_operation.repartitions
-        where id = save_operation.depense_id;
+        where depense.id = depense_id;
 
-        return save_operation.depense_id;
+        return depense_id;
     end if;
 end;
 $$ language plpgsql security definer;
@@ -255,7 +326,6 @@ grant execute on function save_operation(
     jsonb,      -- repartitions
     timestamp   -- operation_date
     ) to authenticated;
-
 create or replace function delete_operation(operation_id integer)
     returns void as $$
 declare
@@ -423,7 +493,7 @@ begin
                                           -- Transform repartition format
                                           select json_agg(
                                                          json_build_object(
-                                                                 'user', (rep->>'user_id')::integer,
+                                                                 'user', (rep->>'user')::integer,
                                                                  'weight', (rep->>'weight')::integer
                                                          )
                                                  )
@@ -443,3 +513,9 @@ $$ language plpgsql security definer;
 grant execute on function get_my_tricounts() to authenticated;
 
 select * from depense;
+select * from tricount;
+select *
+from participation;
+select * from users;
+insert into participation (user_id, tricount_id)
+values (1,2);

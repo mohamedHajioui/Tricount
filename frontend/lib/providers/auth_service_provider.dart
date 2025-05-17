@@ -1,4 +1,5 @@
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:prbd_2425_a07/core/tools/params.dart';
 import '../core/services/auth_service.dart';
 import 'package:prbd_2425_a07/models/user.dart';
 
@@ -23,7 +24,10 @@ class AuthUserNotifier extends AsyncNotifier<User?> {
   }
   
 
-  void logout() => state = const AsyncData<User?>(null);
+  void logout() {
+    Params.clearValue('token');
+    state = AsyncData(null);
+  }
 }
 
 final authUserProvider =

@@ -68,20 +68,21 @@ alter table depense
 create or replace function check_inserted_date() returns trigger as
 $$
 declare
-    tricount_date timestamp;
+    tricount_date date;
 begin
-    select tricount.date_hour into tricount_date
+    select date(tricount.date_hour) into tricount_date  
     from tricount
     where id = NEW.tricount_id;
 
-    if NEW.operation_date < tricount_date then
-        raise exception 'La date de l operation preccede celle du tricount';
+    if NEW.operation_date::date < tricount_date then  -- on compare les dates
+        raise exception 'La date de l operation precede celle du tricount';
     end if;
+
+    RETURN NEW;
 end;
 $$language plpgsql;
-
 create trigger correcte_operation_date
-    before insert or update on tricount
+    before insert or update on depense
     for each row
 execute function check_inserted_date();
 
@@ -145,7 +146,7 @@ BEGIN
     END IF;
     -- Pour chaque utilisateur dans la répartition
     FOR v_user_id IN (
-        SELECT (jsonb_array_elements(NEW.repartition)->>'user_id')::integer
+        SELECT (jsonb_array_elements(NEW.repartition)->>'user')::integer
     )
         LOOP
             -- Vérifie que l'utilisateur est participant du tricount
