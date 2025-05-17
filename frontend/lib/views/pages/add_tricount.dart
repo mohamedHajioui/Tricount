@@ -16,7 +16,6 @@ class AddTricountPage extends ConsumerStatefulWidget {
 class _AddTricountPageState extends ConsumerState<AddTricountPage> {
   final titleController = TextEditingController();
   final descController = TextEditingController();
-  final List<User> addedUsers = [];
   User? selectedUser;
   bool initialized = false;
 
@@ -24,6 +23,7 @@ class _AddTricountPageState extends ConsumerState<AddTricountPage> {
   Widget build(BuildContext context) {
     final usersListAsync = ref.watch(users_listnotifyer);
     final currentUserAsync = ref.watch(logged_usernotifyer);
+    final List<User> addedUsers = [];
 
     return currentUserAsync.when(
       data: (loggedUser) {
