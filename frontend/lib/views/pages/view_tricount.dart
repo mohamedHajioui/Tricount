@@ -108,23 +108,115 @@ class _TricountViewState extends ConsumerState<TricountView> {
 
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: Colors.blue,
+        foregroundColor: Colors.white,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.of(context).pop(); // Retour à l'écran précédent
+          },
+        ),
         title: Text(tricount.title),
         actions: [
-          TextButton(
-            onPressed: () {
-              // TODO: Implémenter la vue des balances
+          // Bouton de rafraîchissement
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () async {
+              await ref.read(currentTricountProvider.notifier).refresh();
             },
-            child: const Text(
-              'View Balance',
-              style: TextStyle(color: Colors.white),
-            ),
+          ),
+          // Bouton d'édition
+          IconButton(
+            icon: const Icon(Icons.edit),
+            onPressed: () {
+              // TODO: Implémenter l'édition du tricount
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Édition du tricount à implémenter')),
+              );
+            },
+          ),
+          // Bouton de suppression
+          IconButton(
+            icon: const Icon(Icons.delete),
+            onPressed: () {
+              // Afficher une boîte de dialogue de confirmation
+              showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return AlertDialog(
+                    title: const Text('Supprimer ce tricount?'),
+                    content: const Text(
+                      'Cette action est irréversible. Toutes les dépenses associées seront également supprimées.',
+                    ),
+                    actions: [
+                      TextButton(
+                        child: const Text('Annuler'),
+                        onPressed: () {
+                          Navigator.of(context).pop(); // Fermer la boîte de dialogue
+                        },
+                      ),
+                      TextButton(
+                        child: const Text('Supprimer', style: TextStyle(color: Colors.red)),
+                        onPressed: () {
+                          // TODO: Implémenter la suppression du tricount
+                          Navigator.of(context).pop(); // Fermer la boîte de dialogue
+                          Navigator.of(context).pop(); // Retourner à la liste des tricounts
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Tricount supprimé')),
+                          );
+                        },
+                      ),
+                    ],
+                  );
+                },
+              );
+            },
           ),
         ],
       ),
       body: Column(
         children: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: TextButton(
+              onPressed: tricount.depenses.isEmpty
+                  ? null  // Désactive le bouton s'il n'y a pas de dépenses
+                  : () {
+                // TODO: Implémenter la vue des balances
+              },
+              style: TextButton.styleFrom(
+                backgroundColor: tricount.depenses.isEmpty
+                    ? Colors.grey[300]  // Gris clair si pas de dépenses
+                    : Color(0xFF4CAF50),  // Vert normal si des dépenses existent
+                padding: const EdgeInsets.symmetric(vertical: 15),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                // La couleur du texte et de l'icône s'adaptera automatiquement
+                // quand le bouton est désactivé (onPressed: null)
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.compare_arrows,
+                    size: 16,
+                    color: tricount.depenses.isEmpty ? Colors.grey[600] : Colors.white,
+                  ),
+                  SizedBox(width: 8),
+                  Text(
+                    'View Balance',
+                    style: TextStyle(
+                      color: tricount.depenses.isEmpty ? Colors.grey[600] : Colors.white,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
           Expanded(
-            child: tricount.depenses.isEmpty
+            child: tricount.depenses.isEmpty 
                 ? _buildEmptyState() // Utiliser notre état vide
                 : RefreshIndicator(
               onRefresh: () async {

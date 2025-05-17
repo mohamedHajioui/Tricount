@@ -40,10 +40,16 @@ class TricountTotalBar extends ConsumerWidget {
             ],
           ),
           FloatingActionButton(
-            child: Icon(Icons.add),
             onPressed: () {
-              // TODO: Ajouter une dépense 
+              // TODO: Ajouter une dépense
             },
+            backgroundColor: Colors.blue, // Couleur de fond bleue
+            child: const Icon(
+              Icons.add,
+              color: Colors.white, // Icône blanche
+            ),
+            elevation: 2, // Légère élévation
+            shape: const CircleBorder(), // Garantit une forme parfaitement ronde
           ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
