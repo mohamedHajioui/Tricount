@@ -1,5 +1,5 @@
 class Repartition {
-  final int user;
+  final int? user;
   final int? weight;
 
   Repartition({
