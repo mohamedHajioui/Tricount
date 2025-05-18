@@ -499,12 +499,12 @@ BEGIN
     -- Dépenses
     INSERT INTO depense(id, tricount_id, title, amount, operation_date, created_at, initiator, repartition)
     VALUES
-        (6, 4, 'Loterie',    35.0, '2024-10-26', '2024-10-26T10:02:24', 1,
-         '[{"user_id": 1, "weight": 1}, {"user_id": 3, "weight": 1}]'),
+        (6, 4, 'Loterie',35.0, '2024-10-26', '2024-10-26T10:02:24', 1,
+         '[{"user": 1, "weight": 1}, {"user": 3, "weight": 1}]'),
         (5, 4, 'Boucherie',  25.5, '2024-10-26', '2024-10-26T09:59:56', 2,
-         '[{"user_id": 1, "weight": 2}, {"user_id": 2, "weight": 1}, {"user_id": 3, "weight": 1}]'),
+         '[{"user": 1, "weight": 2}, {"user": 2, "weight": 1}, {"user": 3, "weight": 1}]'),
         (4, 4, 'Apéros',     31.897456217, '2024-10-13', '2024-10-13T23:51:20', 1,
-         '[{"user_id": 1, "weight": 1}, {"user_id": 2, "weight": 2}, {"user_id": 3, "weight": 3}]');
+         '[{"user": 1, "weight": 1}, {"user": 2, "weight": 2}, {"user": 3, "weight": 3}]');
 
     PERFORM setval(pg_get_serial_sequence('depense', 'id'), (SELECT MAX(id) FROM depense));
 END;
