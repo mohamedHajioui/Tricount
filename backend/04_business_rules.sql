@@ -153,7 +153,7 @@ BEGIN
     END IF;
     -- Pour chaque utilisateur dans la répartition
     FOR v_user_id IN (
-        SELECT (jsonb_array_elements(NEW.repartition)->>'user_id')::integer
+        SELECT (jsonb_array_elements(NEW.repartition)->>'user')::integer
     )
         LOOP
             -- Vérifie que l'utilisateur est participant du tricount
@@ -171,7 +171,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER check_repartition_participants_trigger
+CREATE or replace TRIGGER check_repartition_participants_trigger
     BEFORE INSERT OR UPDATE ON depense
     FOR EACH ROW
 EXECUTE FUNCTION check_repartition_participants();

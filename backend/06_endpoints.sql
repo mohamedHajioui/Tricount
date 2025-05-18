@@ -511,8 +511,9 @@ END;
 $$;
 
 
-
+SELECT * FROM users WHERE email = 'moha@gmail.com';
 grant execute on function save_tricount to authenticated;
+select reset_database();
 
 GRANT EXECUTE ON FUNCTION reset_database() TO anon;
 
