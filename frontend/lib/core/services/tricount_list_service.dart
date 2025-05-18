@@ -14,7 +14,6 @@ class tricount_list_service {
       if (res.body.isEmpty) {
         return [];
       }
-      //throw Exception('${res.body}');
       final decoded = jsonDecode(res.body);
       
 
