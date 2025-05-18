@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:prbd_2425_a07/providers/tricount_list_provider.dart';
 import '../widgets/login_card.dart';
 import '../../providers/auth_service_provider.dart';
 import '../../providers/reset_db_provider.dart';
@@ -189,6 +190,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 onLogin: (email) async {
                   await ref.read(authUserProvider.notifier).login(email, 'Password1,');
                   await ref.refresh(logged_usernotifyer.future);
+                  await ref.refresh(tricountnotifyer.future);
+                  
                   
                   final user = ref.read(authUserProvider).value;
 

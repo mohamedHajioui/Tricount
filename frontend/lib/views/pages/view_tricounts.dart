@@ -16,6 +16,7 @@ class TricountListPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tricountsAsync = ref.watch(tricountnotifyer);
+    
     final reset = ref.watch(resetDbControllerProvider);
     final bool loadingReset = reset.isLoading;
 
@@ -66,6 +67,7 @@ class TricountListPage extends ConsumerWidget {
             ),
             
             ListTile(
+              
               leading: Icon(Icons.recycling),
               title: Text('Reset Database'),
               onTap: loadingReset
@@ -94,6 +96,7 @@ class TricountListPage extends ConsumerWidget {
 
 
       body: tricountsAsync.when(
+        
         data: (tricounts) {
           if (tricounts == null || tricounts.isEmpty) {
             return Center(child: Text('No tricounts found.'));
