@@ -182,7 +182,8 @@ class _TricountViewState extends ConsumerState<TricountView> {
               onPressed: tricount.depenses.isEmpty
                   ? null  // Désactive le bouton s'il n'y a pas de dépenses
                   : () {
-                // TODO: Implémenter la vue des balances
+                Navigator.pushNamed(context, '/viewbalance');
+                
               },
               style: TextButton.styleFrom(
                 backgroundColor: tricount.depenses.isEmpty

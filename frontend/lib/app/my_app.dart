@@ -8,6 +8,8 @@ import 'package:prbd_2425_a07/views/pages/view_tricounts.dart';
 import 'package:prbd_2425_a07/providers/theme_provider.dart';
 import 'package:prbd_2425_a07/views/pages/add_tricount.dart';
 
+import '../views/pages/view_balance.dart';
+
 class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
@@ -25,7 +27,8 @@ class MyApp extends ConsumerWidget {
         '/login': (context) => LoginScreen(),
         '/signup': (context) =>SignupScreen(),
         '/tricounts': (context) => TricountListPage(),
-        '/addtricount':(context)=> AddTricountPage()
+        '/addtricount':(context)=> AddTricountPage(),
+        '/viewbalance':(context) => ViewBalance()
       },
     );
   }

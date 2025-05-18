@@ -313,6 +313,7 @@ end;
 $$ language plpgsql security definer;
 
 grant execute on function delete_operation(integer) to authenticated;
+
 create or replace function get_tricount_balance(tricount_id integer)
     returns table (
                       user_id integer,
@@ -386,6 +387,7 @@ end;
 $$ language plpgsql security definer;
 
 grant execute on function get_tricount_balance(integer) to authenticated;
+
 
 create or replace function get_my_tricounts()
     returns json as $$
