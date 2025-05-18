@@ -110,9 +110,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     // Navigue lorsqu’on est connecté
     auth.whenOrNull(data: (u) {
-      if (u != null) WidgetsBinding.instance.addPostFrameCallback((_) {
-        Navigator.pushReplacementNamed(context, '/home');
+      if (u != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+        Navigator.pushReplacementNamed(context, '/tricounts');
       });
+      }
     });
 
     // ---------------- ÉTAT RESET DB -------------
