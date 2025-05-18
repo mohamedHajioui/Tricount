@@ -28,4 +28,24 @@ class users_service{
     
     return all_users;
   }
+  
+  Future<User?> get_current_user() async{
+    final res = await ApiClient.get('get_user_data',anonymous: false);
+    
+    if(res.statusCode != 200){
+      throw Exception('There is no connected User status code :${res.statusCode}');
+    }
+    if(res.body == null){
+      return null;
+    }
+    throw Exception('${res.body}');
+    
+    final decoded_user = jsonDecode(res.body);
+    if(decoded_user == null) {
+      return null;
+    }
+    
+    User user = User.fromJson(decoded_user[0]);
+    return user;
+  }
 }

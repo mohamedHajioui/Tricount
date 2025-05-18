@@ -1,107 +1,140 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:prbd_2425_a07/core/services/auth_service.dart';
 import 'package:prbd_2425_a07/models/user.dart';
+import 'package:prbd_2425_a07/providers/get_current_user.dart';
 import 'package:prbd_2425_a07/providers/users_provider.dart';
 
-class AddTricountPage extends ConsumerWidget {
+class AddTricountPage extends ConsumerStatefulWidget {
   static const routeName = '/addtricount';
   const AddTricountPage({super.key});
-  
 
   @override
-  Widget build(BuildContext context,WidgetRef ref) {
-    final titleController = TextEditingController();
-    final descController = TextEditingController();
-    final userslist = ref.watch(users_listnotifyer);
-    List<User> added_users = [];
+  ConsumerState<AddTricountPage> createState() => _AddTricountPageState();
+}
 
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.blue,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text("Add Tricount"),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.save),
-            onPressed: () {
-              // save action
-            },
+class _AddTricountPageState extends ConsumerState<AddTricountPage> {
+  final titleController = TextEditingController();
+  final descController = TextEditingController();
+  final List<User> addedUsers = [];
+  User? selectedUser;
+  bool initialized = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final usersListAsync = ref.watch(users_listnotifyer);
+    final currentUserAsync = ref.watch(logged_usernotifyer);
+
+    return currentUserAsync.when(
+      data: (loggedUser) {
+        if (!initialized && loggedUser != null && !addedUsers.contains(loggedUser)) {
+          addedUsers.add(loggedUser);
+          initialized = true;
+        }
+
+        return Scaffold(
+          appBar: AppBar(
+            backgroundColor: Colors.blue,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back),
+              onPressed: () => Navigator.pop(context),
+            ),
+            title: const Text("Add Tricount"),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.save),
+                onPressed: () {
+                  // save action
+                },
+              ),
+            ],
           ),
-        ],
-      ),
-      body: Padding(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Title
-            TextFormField(
-              controller: titleController,
-              decoration: InputDecoration(
-                labelText: 'Title',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            SizedBox(height: 16),
-
-            // Description with validation
-            TextFormField(
-              controller: descController,
-              decoration: InputDecoration(
-                labelText: 'Description',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            SizedBox(height: 4),
-
-            // Participants
-            Text(
-              "Participants",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            ListTile(
-              leading: Icon(Icons.account_circle),
-              title: Text("Geoffrey", style: TextStyle(fontWeight: FontWeight.bold)),
-              trailing: Icon(Icons.person_remove_alt_1),
-            ),
-
-            // Dropdown + Add
-            userslist.when(
-              data: (allUsers) {
-                return Row(
-                  children: [
-                    Expanded(
-                      child: DropdownButtonFormField<User>(
-                        hint: Text("Add a new participant"),
-                        items: (allUsers??[]).map((user) {
-                          return DropdownMenuItem<User>(
-                            value: user,
-                            child: Text(user.fullName),
-                          );
-                        }).toList(),
-                        onChanged: (val) {
-                          // You can use val here
-                          print('Selected: ${val?.fullName}');
-                        },
-                      ),
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.person_add_alt),
+          body: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextFormField(
+                  controller: titleController,
+                  decoration: const InputDecoration(
+                    labelText: 'Title',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: descController,
+                  decoration: const InputDecoration(
+                    labelText: 'Description',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  "Participants",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                ...addedUsers.map((user) {
+                  return ListTile(
+                    leading: const Icon(Icons.account_circle),
+                    title: Text(user.fullName, style: const TextStyle(fontWeight: FontWeight.bold)),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.person_remove_alt_1),
                       onPressed: () {
-                        // Add action
+                        setState(() {
+                          addedUsers.remove(user);
+                        });
                       },
                     ),
-                  ],
-                );
-              },
-              loading: () => Center(child: CircularProgressIndicator()),
-              error: (err, _) => Text('Error loading users: $err'),
-            )],
-        ),
-      ),
+                  );
+                }).toList(),
+                const SizedBox(height: 16),
+                usersListAsync.when(
+                  data: (allUsers) {
+                    final availableUsers = allUsers.where((u) => !addedUsers.contains(u)).toList();
+                    return Row(
+                      children: [
+                        Expanded(
+                          child: DropdownButtonFormField<User>(
+                            hint: const Text("Add a new participant"),
+                            value: selectedUser,
+                            items: availableUsers.map((u) {
+                              return DropdownMenuItem<User>(
+                                value: u,
+                                child: Text(u.fullName),
+                              );
+                            }).toList(),
+                            onChanged: (val) {
+                              setState(() {
+                                selectedUser = val;
+                              });
+                            },
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.person_add_alt),
+                          onPressed: () {
+                            if (selectedUser != null && !addedUsers.contains(selectedUser)) {
+                              setState(() {
+                                addedUsers.add(selectedUser!);
+                                selectedUser = null;
+                              });
+                            }
+                          },
+                        ),
+                      ],
+                    );
+                  },
+                  loading: () => const Center(child: CircularProgressIndicator()),
+                  error: (err, _) => Text('Error loading users: $err'),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+      loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
+      error: (err, _) => Scaffold(body: Center(child: Text('Error: $err'))),
     );
   }
 }
