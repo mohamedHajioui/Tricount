@@ -3,6 +3,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../widgets/login_card.dart';
 import '../../providers/auth_service_provider.dart';
 import '../../providers/reset_db_provider.dart';
+import '../../providers/get_current_user.dart';
 
 
 
@@ -187,6 +188,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               LoginCard(
                 onLogin: (email) async {
                   await ref.read(authUserProvider.notifier).login(email, 'Password1,');
+                  await ref.refresh(logged_usernotifyer.future);
+                  
                   final user = ref.read(authUserProvider).value;
 
                   if (user != null && context.mounted) {

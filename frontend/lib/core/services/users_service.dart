@@ -38,7 +38,6 @@ class users_service{
     if(res.body == null){
       return null;
     }
-    throw Exception('${res.body}');
     
     final decoded_user = jsonDecode(res.body);
     if(decoded_user == null) {

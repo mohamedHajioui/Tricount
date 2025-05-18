@@ -3,73 +3,21 @@ create or replace function save_tricount(
     save_title text,
     save_description text,
     save_creator int,
-    save_participants integer[]) returns int as
+    save_participants integer[]) returns void  as
 $$
-declare
-    current_user_id integer;
-    new_tricount_id integer;
 begin
     perform auth.check_logged();
-    current_user_id := auth.id();
-
-    -- Cas création (id = 0)
     if save_id = 0 then
-        -- Insérer dans tricount
-        insert into tricount(title, description, participant, creator)
-        values (save_title, save_description, save_participants, save_creator)
-        returning id into new_tricount_id;
 
-        -- Ajouter le créateur comme participant s'il n'est pas déjà inclus
-        if not (save_creator = any(save_participants)) then
-            insert into participation(user_id, tricount_id)
-            values (save_creator, new_tricount_id);
-        end if;
-
-        -- Ajouter tous les participants dans la table participation
-        if save_participants is not null and array_length(save_participants, 1) > 0 then
-            insert into participation(user_id, tricount_id)
-            select unnest(save_participants), new_tricount_id
-            on conflict do nothing;
-        end if;
-
-        return new_tricount_id;
-    else
-        -- Cas modification (id > 0)
-        -- Vérifier que l'utilisateur a le droit de modifier ce tricount
-        if not exists (
-            select 1 from tricount
-            where id = save_id
-              and (creator = current_user_id or current_user_id = any(participant))
-        ) then
-            raise exception 'Accès non autorisé à ce tricount';
-        end if;
-
-        -- Mettre à jour le tricount
-        update tricount
-        set title = save_title,
-            description = save_description,
-            participant = save_participants
+        insert into tricount(title, description, participant,creator) values (save_title,save_description,save_participants,save_creator);
+    end if;
+    if save_id > 0 then
+        update tricount set title = save_title , description = save_description , participant = save_participants
         where id = save_id;
-
-        -- Supprimer les participations qui ne sont plus dans le tableau
-        delete from participation
-        where tricount_id = save_id
-          and not (user_id = any(save_participants));
-
-        -- Ajouter les nouvelles participations
-        if save_participants is not null and array_length(save_participants, 1) > 0 then
-            insert into participation(user_id, tricount_id)
-            select unnest(save_participants), save_id
-            on conflict do nothing;
-        end if;
-
-        return save_id;
     end if;
 end;
-$$language plpgsql security definer;
-DROP FUNCTION save_tricount(integer,text,text,integer,integer[]);
 
-grant execute on function save_tricount(int, text, text, int, integer[]) to authenticated;
+$$language plpgsql security definer;
 
 create or replace function get_user_data()
     returns setof users as
@@ -438,6 +386,7 @@ end;
 $$ language plpgsql security definer;
 
 grant execute on function get_tricount_balance(integer) to authenticated;
+
 create or replace function get_my_tricounts()
     returns json as $$
 declare
@@ -512,10 +461,58 @@ end;
 $$ language plpgsql security definer;
 grant execute on function get_my_tricounts() to authenticated;
 
-select * from depense;
-select * from tricount;
-select *
-from participation;
-select * from users;
-insert into participation (user_id, tricount_id)
-values (1,2);
+CREATE OR REPLACE FUNCTION reset_database()
+    RETURNS void
+    LANGUAGE plpgsql
+    SECURITY DEFINER
+    SET search_path = public
+AS $$
+BEGIN
+    TRUNCATE TABLE depense, participation, tricount, users RESTART IDENTITY CASCADE;
+
+    -- Réinsertion des utilisateurs
+    INSERT INTO users (id, email, password, full_name, role, iban)
+    VALUES
+        (1, 'boverhaegen@epfc.eu', 'Password1,', 'Boris',    'basic_user', NULL),
+        (2, 'bepenelle@epfc.eu',   'Password1,', 'Benoît',   'basic_user', NULL),
+        (3, 'xapigeolet@epfc.eu',  'Password1,', 'Xavier',   'basic_user', NULL),
+        (4, 'mamichel@epfc.eu',    'Password1,', 'Marc',     'basic_user', 'BE12 1234 1234 1234'),
+        (5, 'gedielman@epfc.eu',   'Password1,', 'Geoffrey', 'basic_user', 'BE45 4567 4567 4567'),
+        (9, 'admin@epfc.eu',       'Password1,', 'Admin',    'admin',      NULL);
+
+    PERFORM setval('users_id_seq', (SELECT MAX(id) FROM users));
+
+    -- Tricounts
+    INSERT INTO tricount(id, title, description, creator, participant, date_hour)
+    VALUES
+        (4, 'Vacances', 'A la mer du nord', 1, ARRAY[2, 1, 4, 3], '2024-10-10T19:31:09'),
+        (2, 'Resto badminton', NULL, 1, ARRAY[2, 1], '2024-10-10T19:25:10');
+
+    PERFORM setval(pg_get_serial_sequence('tricount', 'id'), (SELECT MAX(id) FROM tricount));
+
+    -- Participations
+    INSERT INTO participation(user_id, tricount_id)
+    VALUES
+        (2, 4), (1, 4), (4, 4), (3, 4),
+        (2, 2), (1, 2);
+
+    -- Dépenses
+    INSERT INTO depense(id, tricount_id, title, amount, operation_date, created_at, initiator, repartition)
+    VALUES
+        (6, 4, 'Loterie',    35.0, '2024-10-26', '2024-10-26T10:02:24', 1,
+         '[{"user_id": 1, "weight": 1}, {"user_id": 3, "weight": 1}]'),
+        (5, 4, 'Boucherie',  25.5, '2024-10-26', '2024-10-26T09:59:56', 2,
+         '[{"user_id": 1, "weight": 2}, {"user_id": 2, "weight": 1}, {"user_id": 3, "weight": 1}]'),
+        (4, 4, 'Apéros',     31.897456217, '2024-10-13', '2024-10-13T23:51:20', 1,
+         '[{"user_id": 1, "weight": 1}, {"user_id": 2, "weight": 2}, {"user_id": 3, "weight": 3}]');
+
+    PERFORM setval(pg_get_serial_sequence('depense', 'id'), (SELECT MAX(id) FROM depense));
+END;
+$$;
+
+
+
+grant execute on function save_tricount to authenticated;
+
+GRANT EXECUTE ON FUNCTION reset_database() TO anon;
+
