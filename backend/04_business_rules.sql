@@ -65,26 +65,33 @@ alter table depense
 alter table depense
     add constraint montant_check check ( amount >= 0.01 );
 
-create or replace function check_inserted_date() returns trigger as
+DROP TRIGGER IF EXISTS correcte_operation_date ON tricount;
+
+CREATE OR REPLACE FUNCTION check_inserted_date() RETURNS TRIGGER as
 $$
-declare
+DECLARE
     tricount_date date;
-begin
-    select date(tricount.date_hour) into tricount_date  
-    from tricount
-    where id = NEW.tricount_id;
+BEGIN
 
-    if NEW.operation_date::date < tricount_date then  -- on compare les dates
-        raise exception 'La date de l operation precede celle du tricount';
-    end if;
+    SELECT date(date_hour) INTO tricount_date
+    FROM tricount
+    WHERE id = NEW.tricount_id;
 
-    RETURN NEW;
-end;
-$$language plpgsql;
-create trigger correcte_operation_date
-    before insert or update on depense
-    for each row
-execute function check_inserted_date();
+    /* Si la dépense est antérieure : exception */
+    IF NEW.operation_date::date < tricount_date THEN
+        RAISE EXCEPTION
+            'La date de l''opération (%) précède la date de création du tricount (%)',
+            NEW.operation_date::date, tricount_date;
+    END IF;
+    RETURN NEW;       
+END;
+$$ language plpgsql;
+
+CREATE TRIGGER correcte_operation_date
+    BEFORE INSERT OR UPDATE ON depense
+    FOR EACH ROW
+EXECUTE FUNCTION check_inserted_date();
+
 
 create or replace function check_participation_deletion()
 returns trigger as
@@ -146,7 +153,7 @@ BEGIN
     END IF;
     -- Pour chaque utilisateur dans la répartition
     FOR v_user_id IN (
-        SELECT (jsonb_array_elements(NEW.repartition)->>'user')::integer
+        SELECT (jsonb_array_elements(NEW.repartition)->>'user_id')::integer
     )
         LOOP
             -- Vérifie que l'utilisateur est participant du tricount
