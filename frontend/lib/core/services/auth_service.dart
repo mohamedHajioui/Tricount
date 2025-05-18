@@ -61,18 +61,34 @@ class AuthService {  // Ajoute la classe !
     );
     debugPrint('HTTP ${res.statusCode}  ${res.body}');
 
-
     if (res.statusCode != 200) {
       throw Exception(jsonDecode(res.body)['message']);
     }
-    
-    final row = (jsonDecode(res.body) as List).first as Map<String, dynamic>;
+
+    // On récupère le token du backend
+    final row = jsonDecode(res.body) as Map<String, dynamic>;
     final token = row['token'] as String;
     Params.setValue('token', token);
+
     debugPrint('signup token = $token');
     debugPrint('BODY = ${res.body}');
-    return User.fromJson(row);
+
+    // On fait un nouvel appel API pour obtenir les infos de l'utilisateur courant
+    final userRes = await ApiClient.post(
+      'get_user_data',
+      anonymous: false, // Ce flag indique que le token est utilisé dans les headers
+    );
+
+    // get_user_data renvoie une liste d'un user
+    final userDataList = jsonDecode(userRes.body) as List;
+    if (userDataList.isEmpty) {
+      throw Exception('No user data returned');
+    }
+    final userData = userDataList.first as Map<String, dynamic>;
+
+    return User.fromJson(userData);
   }
+
 
   Future<bool> checkEmailAvailable(String email) async {
     final res = await ApiClient.get(
