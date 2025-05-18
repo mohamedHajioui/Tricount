@@ -16,6 +16,7 @@ class AddTricountPage extends ConsumerStatefulWidget {
 class _AddTricountPageState extends ConsumerState<AddTricountPage> {
   final titleController = TextEditingController();
   final descController = TextEditingController();
+  final List<User> addedUsers = [];
   User? selectedUser;
   bool initialized = false;
 
@@ -23,13 +24,14 @@ class _AddTricountPageState extends ConsumerState<AddTricountPage> {
   Widget build(BuildContext context) {
     final usersListAsync = ref.watch(users_listnotifyer);
     final currentUserAsync = ref.watch(logged_usernotifyer);
-    final List<User> addedUsers = [];
 
     return currentUserAsync.when(
       data: (loggedUser) {
-        if (!initialized && loggedUser != null && !addedUsers.contains(loggedUser)) {
-          addedUsers.add(loggedUser);
-          initialized = true;
+        if (loggedUser == null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            Navigator.pushReplacementNamed(context, '/login');
+          });
+          return const Scaffold();
         }
 
         return Scaffold(
@@ -75,10 +77,13 @@ class _AddTricountPageState extends ConsumerState<AddTricountPage> {
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 ...addedUsers.map((user) {
+                  final isLoggedUser = loggedUser.id == user.id;
                   return ListTile(
                     leading: const Icon(Icons.account_circle),
                     title: Text(user.fullName, style: const TextStyle(fontWeight: FontWeight.bold)),
-                    trailing: IconButton(
+                    trailing: isLoggedUser
+                        ? null
+                        : IconButton(
                       icon: const Icon(Icons.person_remove_alt_1),
                       onPressed: () {
                         setState(() {
@@ -91,7 +96,7 @@ class _AddTricountPageState extends ConsumerState<AddTricountPage> {
                 const SizedBox(height: 16),
                 usersListAsync.when(
                   data: (allUsers) {
-                    final availableUsers = allUsers.where((u) => !addedUsers.contains(u)).toList();
+                    final availableUsers = allUsers.where((u) => !addedUsers.contains(u) && (loggedUser!=null && loggedUser.id != u.id)).toList();
                     return Row(
                       children: [
                         Expanded(
@@ -136,5 +141,18 @@ class _AddTricountPageState extends ConsumerState<AddTricountPage> {
       loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
       error: (err, _) => Scaffold(body: Center(child: Text('Error: $err'))),
     );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final loggedUser = ref.read(logged_usernotifyer).asData?.value;
+      if (loggedUser != null && !addedUsers.contains(loggedUser)) {
+        setState(() {
+          addedUsers.add(loggedUser);
+        });
+      }
+    });
   }
 }
