@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:prbd_2425_a07/core/services/api_client.dart';
 import 'package:prbd_2425_a07/models/repartition.dart';
 
 class Depense {
@@ -31,6 +34,66 @@ class Depense {
           .map((r) => Repartition.fromJson(r))
           .toList(),
     );
+  }
+  // Pour une dépense existante (modification)
+  Future<void> saveOperation(int tricountId) async {
+    final Map<String, dynamic> body = {
+      "id": id,
+      "tricount_id": tricountId,
+      "title": title,
+      "amount": amount,
+      "operation_date": operationDate.toIso8601String(),
+      "initiator": initiator,
+      "repartitions": repartitions.map((r) => {
+        "user": r.user,
+        "weight": r.weight
+      }).toList()
+    };
+
+    final response = await ApiClient.post(
+      'save_operation', 
+      body: json.encode(body),
+    );
+
+    if (response.statusCode != 200) {  
+      throw Exception('Failed to update operation: ${response.body}');
+    }
+  }
+
+// Méthode statique pour créer une nouvelle dépense
+  static Future<Depense> createOperation({
+    required int tricountId,
+    required String title,
+    required double amount,
+    required DateTime operationDate,
+    required int initiator,
+    required List<Repartition> repartitions,
+  }) async {
+    final Map<String, dynamic> body = {
+      "id": 0,  // 0 pour création
+      "tricount_id": tricountId,
+      "title": title,
+      "amount": amount,
+      "operation_date": operationDate.toIso8601String(),
+      "initiator": initiator,
+      "repartitions": repartitions.map((r) => {
+        "user": r.user,
+        "weight": r.weight
+      }).toList()
+    };
+    
+    final response = await ApiClient.post(
+      'save_operation',
+      body: json.encode(body),
+    );
+    
+    if (response.statusCode != 200) {
+      throw Exception('Failed to create operation: ${response.body}');
+    }
+    // Parse la réponse pour créer un nouvel objet Depense
+    final responseData = json.decode(response.body);
+    return Depense.fromJson(responseData);
+    
   }
 
   // Méthodes utiles
