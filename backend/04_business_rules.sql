@@ -143,7 +143,7 @@ before delete on participation
 for each row 
 execute procedure check_participation_deletion();
 CREATE OR REPLACE FUNCTION check_repartition_participants()
-    RETURNS TRIGGER AS $$
+    RETURNS TRIGGER set search_path from current as $$
 DECLARE
     v_user_id integer;
 BEGIN
@@ -169,9 +169,12 @@ BEGIN
 
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql security definer;
 
-CREATE or replace TRIGGER check_repartition_participants_trigger
-    BEFORE INSERT OR UPDATE ON depense
-    FOR EACH ROW
+CREATE constraint TRIGGER check_repartition_participants_trigger
+    after insert
+    on depense
+    deferrable initially deferred
+    for each row
 EXECUTE FUNCTION check_repartition_participants();
+

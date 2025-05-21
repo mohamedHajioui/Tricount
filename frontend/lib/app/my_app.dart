@@ -28,7 +28,6 @@ class MyApp extends ConsumerWidget {
         '/signup': (context) =>SignupScreen(),
         '/tricounts': (context) => TricountListPage(),
         '/addtricount':(context)=> AddTricountPage(),
-        '/viewbalance':(context) => ViewBalance()
       },
     );
   }
