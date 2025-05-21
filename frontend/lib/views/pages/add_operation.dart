@@ -104,7 +104,10 @@ class _AddOperationPageState extends ConsumerState<AddOperationPage> {
 
           // Initialiser les poids
           for (var rep in depense.repartitions) {
-            _weights[rep.user] = rep.weight ?? 0;
+            if(rep.user != null) {
+              _weights[rep.user!] = rep.weight ?? 0;
+            }
+            
           }
         });
       }
