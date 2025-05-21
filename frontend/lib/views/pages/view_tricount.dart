@@ -1,6 +1,7 @@
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter/material.dart';
 import 'package:prbd_2425_a07/providers/current_tricount_provider.dart';
+import 'package:prbd_2425_a07/views/pages/view_balance.dart';
 import 'package:prbd_2425_a07/views/widgets/operation_card.dart';
 import 'package:prbd_2425_a07/views/widgets/tricount_total_bar.dart';
 
@@ -180,10 +181,10 @@ class _TricountViewState extends ConsumerState<TricountView> {
             padding: const EdgeInsets.all(8.0),
             child: TextButton(
               onPressed: tricount.depenses.isEmpty
-                  ? null  // Désactive le bouton s'il n'y a pas de dépenses
+                  ? null
                   : () {
-                Navigator.pushNamed(context, '/viewbalance');
-                
+                Navigator.push(context, MaterialPageRoute(builder: (context) => ViewBalance(tricountId: widget.tricountId))) ;
+                    
               },
               style: TextButton.styleFrom(
                 backgroundColor: tricount.depenses.isEmpty
