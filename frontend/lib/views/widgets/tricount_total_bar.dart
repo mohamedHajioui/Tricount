@@ -1,12 +1,14 @@
 // lib/views/widgets/tricount_total_bar.dart
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:prbd_2425_a07/views/pages/add_operation.dart';
 import '../../providers/current_tricount_provider.dart';
 
 class TricountTotalBar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tricountState = ref.watch(currentTricountProvider);
+    final tricount = tricountState.tricount;
 
     return Container(
       padding: EdgeInsets.all(16),
@@ -40,8 +42,15 @@ class TricountTotalBar extends ConsumerWidget {
             ],
           ),
           FloatingActionButton(
-            onPressed: () {
-              // TODO: Ajouter une dépense
+            onPressed: tricount == null ? null : () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => AddOperationPage(
+                    tricountId: tricount.id,
+                  ),
+                ),
+              );
             },
             backgroundColor: Colors.blue, // Couleur de fond bleue
             child: const Icon(

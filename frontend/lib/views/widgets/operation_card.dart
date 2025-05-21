@@ -1,18 +1,19 @@
 // tricount_expense_card.dart
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:prbd_2425_a07/models/depense.dart';
 import 'package:prbd_2425_a07/providers/current_tricount_provider.dart';
+import 'package:prbd_2425_a07/views/pages/add_operation.dart';
 
 class OperationCard extends ConsumerWidget {
   final Depense depense;
 
   const OperationCard({required this.depense, Key? key}) : super(key: key);
-  
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final tricount = ref.watch(currentTricountProvider).tricount;
+    final tricountState = ref.watch(currentTricountProvider);
+    final tricount = tricountState.tricount;
     final initiator = tricount?.participants
         .firstWhere((p) => p.id == depense.initiator);
 
@@ -46,6 +47,20 @@ class OperationCard extends ConsumerWidget {
             ),
           ],
         ),
+        // Ajout de l'action de tap sur la ListTile
+        onTap: () {
+          if (tricount != null) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => AddOperationPage(
+                  tricountId: tricount.id,
+                  depenseId: depense.id,
+                ),
+              ),
+            );
+          }
+        },
       ),
     );
   }

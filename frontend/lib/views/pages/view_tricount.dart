@@ -1,7 +1,7 @@
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter/material.dart';
 import 'package:prbd_2425_a07/providers/current_tricount_provider.dart';
-import 'package:prbd_2425_a07/views/pages/view_balance.dart';
+import 'package:prbd_2425_a07/views/pages/add_operation.dart';
 import 'package:prbd_2425_a07/views/widgets/operation_card.dart';
 import 'package:prbd_2425_a07/views/widgets/tricount_total_bar.dart';
 
@@ -32,6 +32,8 @@ class _TricountViewState extends ConsumerState<TricountView> {
 
   // Fonction pour afficher le contenu quand le tricount est vide
   Widget _buildEmptyState() {
+    final tricountState = ref.watch(currentTricountProvider);
+    final tricount = tricountState.tricount;
     return Center(
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 20),
@@ -61,9 +63,15 @@ class _TricountViewState extends ConsumerState<TricountView> {
             ),
             const SizedBox(height: 24),
             ElevatedButton(
-              onPressed: () {
-                // TODO: Implémenter la création de dépense
-                // Cette fonction devrait être la même que celle du FAB dans TricountTotalBar
+              onPressed: tricount == null ? null : () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => AddOperationPage(
+                      tricountId: tricount.id,
+                    ),
+                  ),
+                );
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blue,
@@ -87,6 +95,7 @@ class _TricountViewState extends ConsumerState<TricountView> {
   @override
   Widget build(BuildContext context) {
     final tricountState = ref.watch(currentTricountProvider);
+    
 
     if (tricountState.isLoading) {
       return const Scaffold(
@@ -181,10 +190,10 @@ class _TricountViewState extends ConsumerState<TricountView> {
             padding: const EdgeInsets.all(8.0),
             child: TextButton(
               onPressed: tricount.depenses.isEmpty
-                  ? null
+                  ? null  // Désactive le bouton s'il n'y a pas de dépenses
                   : () {
-                Navigator.push(context, MaterialPageRoute(builder: (context) => ViewBalance(tricountId: widget.tricountId))) ;
-                    
+                Navigator.pushNamed(context, '/viewbalance');
+                
               },
               style: TextButton.styleFrom(
                 backgroundColor: tricount.depenses.isEmpty

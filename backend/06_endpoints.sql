@@ -166,7 +166,7 @@ create or replace function save_operation(
     repartitions jsonb,
     operation_date timestamp default null
 )
-    returns integer as
+    returns json as
 $$
 declare
     current_user_id integer;
@@ -226,7 +226,19 @@ begin
                      repartitions
                  ) returning depense.id into new_operation_id;
 
-        return new_operation_id;
+        return (
+            select json_build_object(
+                           'id', d.id,
+                           'title', d.title,
+                           'amount', d.amount,
+                           'operation_date', d.operation_date,
+                           'initiator', d.initiator,
+                           'created_at', d.created_at,
+                           'repartitions', d.repartition
+                   )
+            from depense d
+            where d.id = new_operation_id
+        );
     else
         -- Ajouter l'initiateur à la liste des participants s'il n'y est pas déjà
         if not (initiator = any(participant_ids)) then
@@ -260,7 +272,19 @@ begin
                            repartition = save_operation.repartitions
         where depense.id = depense_id;
 
-        return depense_id;
+        return (
+            select json_build_object(
+                           'id', d.id,
+                           'title', d.title,
+                           'amount', d.amount,
+                           'operation_date', d.operation_date,
+                           'initiator', d.initiator,
+                           'created_at', d.created_at,
+                           'repartitions', d.repartition
+                   )
+            from depense d
+            where d.id = depense_id
+        );
     end if;
 end;
 $$ language plpgsql security definer;
