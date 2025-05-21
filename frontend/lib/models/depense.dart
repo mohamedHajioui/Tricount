@@ -108,4 +108,61 @@ class Depense {
 
   bool isParticipant(int userId) =>
       repartitions.any((r) => r.user == userId);
+  
+  static String? validateTitle(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Please enter a title';
+    }
+    if (value.length < 3) {
+      return 'Title must be at least 3 characters';
+    }
+    return null;
+  }
+  // Validation du montant
+  static String? validateAmount(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'required';
+    }
+    try {
+      double amount = double.parse(value.replaceAll(',', '.'));
+      if (amount < 0.01) {
+        return 'minimum 0.01 €';
+      }
+    } catch (_) {
+      return 'Please enter a valid number';
+    }
+    return null;
+  }
+  // Validation de la date d'opération
+  static String? validateOperationDate(DateTime? date, DateTime? tricountCreationDate) {
+    if (date == null) {
+      return 'required';
+    }
+    
+    if (date.isAfter(DateTime.now())) {
+      return 'date may not be in the future';
+    }
+
+    // Vérifier si la date est avant la création du tricount
+    if (tricountCreationDate != null && date.isBefore(tricountCreationDate)) {
+      return 'date may not be before the tricount date';
+    }
+
+    return null;
+  }
+  // Validation des répartitions
+  static String? validateRepartitions(Map<int, int> weights) {
+    if (weights.values.every((weight) => weight <= 0)) {
+      return 'at least one participant must be selected';
+    }
+    return null;
+  }
+  //normalement ya toujours un intiator de selected par defaut mais je met la verif quand meme
+  static String? validateInitiator(int? value) {
+    if (value == null) {
+      return 'Please select who paid';
+    }
+    return null;
+  }
+ 
 }
