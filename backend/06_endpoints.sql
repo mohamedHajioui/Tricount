@@ -396,7 +396,7 @@ begin
                            'id', d.id,
                            'title', d.title,
                            'amount', d.amount,
-                           'operation_date', d.operation_date,
+                           'operation_date', to_char(d.operation_date::date, 'YYYY-MM-DD'),
                            'initiator', d.initiator,
                            'created_at', d.created_at,
                            'repartitions', d.repartition
@@ -442,7 +442,7 @@ begin
                            'id', d.id,
                            'title', d.title,
                            'amount', d.amount,
-                           'operation_date', d.operation_date,
+                           'operation_date', to_char(d.operation_date::date, 'YYYY-MM-DD'),
                            'initiator', d.initiator,
                            'created_at', d.created_at,
                            'repartitions', d.repartition
@@ -596,7 +596,18 @@ begin
     current_user_id := auth.id();
 
     return (
-        select json_agg(tricount_with_details order by last_operation_date desc nulls last, created_at desc)
+        select json_agg(
+                       json_build_object(
+                               'id', tricount_data.id,
+                               'title', tricount_data.title,
+                               'description', tricount_data.description,
+                               'created_at', tricount_data.created_at,
+                               'creator', tricount_data.creator,
+                               'participants', tricount_data.participants,
+                               'operations', tricount_data.operations
+                       )
+                       order by tricount_data.last_operation_date desc nulls last, tricount_data.created_at desc
+               )
         from (
                  select
                      t.id,
@@ -654,7 +665,7 @@ begin
                  from tricount t
                           join participation p on t.id = p.tricount_id
                  where p.user_id = current_user_id
-             ) tricount_with_details
+             ) tricount_data
     );
 end;
 $$ language plpgsql security definer;
