@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-//import 'package:intl/intl.dart';
+import 'package:intl/intl.dart';
 import 'package:prbd_2425_a07/core/tools/validating_text_editing_controller.dart';
 import 'package:prbd_2425_a07/models/depense.dart';
 import 'package:prbd_2425_a07/models/repartition.dart';
@@ -326,7 +326,7 @@ class _AddOperationPageState extends ConsumerState<AddOperationPage> {
                 errorText: _dateError,
               ),
               controller: TextEditingController(
-                //text: DateFormat('dd/MM/yyyy').format(_selectedDate),
+                text: DateFormat('dd/MM/yyyy').format(_selectedDate),
               ),
             ),
           ),

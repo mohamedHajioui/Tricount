@@ -494,9 +494,10 @@ CREATE OR REPLACE FUNCTION reset_database()
     SET search_path = public
 AS $$
 BEGIN
+    -- On remet TOUT à zéro
     TRUNCATE TABLE depense, participation, tricount, users RESTART IDENTITY CASCADE;
 
-    -- Réinsertion des utilisateurs
+    -- USERS
     INSERT INTO users (id, email, password, full_name, role, iban)
     VALUES
         (1, 'boverhaegen@epfc.eu', 'Password1,', 'Boris',    'basic_user', NULL),
@@ -508,38 +509,44 @@ BEGIN
 
     PERFORM setval('users_id_seq', (SELECT MAX(id) FROM users));
 
-    -- Tricounts
+    -- TRICOUNT
     INSERT INTO tricount(id, title, description, creator, participant, date_hour)
     VALUES
         (4, 'Vacances', 'A la mer du nord', 1, ARRAY[2, 1, 4, 3], '2024-10-10T19:31:09'),
-        (2, 'Resto badminton', NULL, 1, ARRAY[2, 1], '2024-10-10T19:25:10');
+        (2, 'Resto badminton', NULL, 1, ARRAY[2, 1], '2024-10-10T19:25:10'),
+        (1, 'Gers 2022', NULL, 1, ARRAY[1], '2024-10-10T18:42:24'); 
 
     PERFORM setval(pg_get_serial_sequence('tricount', 'id'), (SELECT MAX(id) FROM tricount));
 
-    -- Participations
+    -- PARTICIPATIONS
     INSERT INTO participation(user_id, tricount_id)
     VALUES
+        -- Vacances
         (2, 4), (1, 4), (4, 4), (3, 4),
-        (2, 2), (1, 2);
+        -- Resto badminton
+        (2, 2), (1, 2),
+        -- Gers 2022 (juste Boris)
+        (1, 1);
 
-    -- Dépenses
     INSERT INTO depense(id, tricount_id, title, amount, operation_date, created_at, initiator, repartition)
     VALUES
-        (6, 4, 'Loterie',35.0, '2024-10-26', '2024-10-26T10:02:24', 1,
+        (6, 4, 'Loterie', 35.0, '2024-10-26', '2024-10-26T10:02:24', 1,
          '[{"user": 1, "weight": 1}, {"user": 3, "weight": 1}]'),
-        (5, 4, 'Boucherie',  25.5, '2024-10-26', '2024-10-26T09:59:56', 2,
+        (5, 4, 'Boucherie', 25.5, '2024-10-26', '2024-10-26T09:59:56', 2,
          '[{"user": 1, "weight": 2}, {"user": 2, "weight": 1}, {"user": 3, "weight": 1}]'),
-        (4, 4, 'Apéros',     31.897456217, '2024-10-13', '2024-10-13T23:51:20', 1,
-         '[{"user": 1, "weight": 1}, {"user": 2, "weight": 2}, {"user": 3, "weight": 3}]');
+        (4, 4, 'Apéros', 31.897456217, '2024-10-13', '2024-10-13T23:51:20', 1,
+         '[{"user": 1, "weight": 1}, {"user": 2, "weight": 2}, {"user": 3, "weight": 3}]'),
+        (3, 4, 'Grosses courses LIDL', 212.47, '2024-10-13', '2024-10-13T21:23:49', 3,
+         '[{"user": 1, "weight": 2}, {"user": 2, "weight": 1}, {"user": 3, "weight": 1}]'),
+        (2, 4, 'Plein essence', 75.0, '2024-10-13', '2024-10-13T20:10:41', 1,
+         '[{"user": 1, "weight": 1}, {"user": 2, "weight": 1}]'),
+        (1, 4, 'Colruyt', 100.0, '2024-10-13', '2024-10-13T19:09:18', 2,
+         '[{"user": 1, "weight": 1}, {"user": 2, "weight": 1}]');
 
     PERFORM setval(pg_get_serial_sequence('depense', 'id'), (SELECT MAX(id) FROM depense));
 END;
 $$;
 
-
-SELECT * FROM users WHERE email = 'moha@gmail.com';
 grant execute on function save_tricount to authenticated;
-select reset_database();
-
 GRANT EXECUTE ON FUNCTION reset_database() TO anon;
 
