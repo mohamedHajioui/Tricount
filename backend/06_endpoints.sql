@@ -1,8 +1,8 @@
 create or replace function save_tricount(
-    id integer,                   -- Renommé pour correspondre au body
-    title text,                   -- Renommé
-    description text default null, -- Renommé et valeur par défaut
-    participants integer[] default null -- Renommé et valeur par défaut
+    id integer,                   
+    title text,                   
+    description text default null, --  et valeur par défaut
+    participants integer[] default null --  valeur par défaut
 )
     returns json as
 $$
@@ -639,7 +639,7 @@ begin
                      ) as participants,
                      (
                          -- Get operations details
-                         select json_agg(operation_details order by operation_date desc,id desc )
+                         select COALESCE(json_agg(operation_details order by operation_date desc,id desc ),'[]'::json)
                          from (
                                   select
                                       d.id,
