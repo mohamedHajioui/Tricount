@@ -127,7 +127,7 @@ begin
         select 1
         from depense d
         where d.tricount_id = old.tricount_id
-            and d.repartition @> format('[{"user_id": %s}]', old.user_id)::jsonb
+            and d.repartition @> format('[{"user": %s}]', old.user_id)::jsonb
     ) into v_user_in_depense;
     
     if v_user_in_depense then
