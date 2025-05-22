@@ -639,7 +639,7 @@ begin
                      ) as participants,
                      (
                          -- Get operations details
-                         select json_agg(operation_details order by operation_date desc)
+                         select json_agg(operation_details order by operation_date desc,id desc )
                          from (
                                   select
                                       d.id,
