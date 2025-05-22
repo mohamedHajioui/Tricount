@@ -540,7 +540,7 @@ begin
             paid_amounts AS (
                 SELECT
                     p.user_id,
-                    COALESCE(SUM(d.amount)::numeric, 0)::numeric(10,2) as amount -- Arrondi à 2 décimales
+                    COALESCE(SUM(d.amount::numeric), 0)::numeric(10,2) as amount
                 FROM participation p
                          LEFT JOIN depense d ON d.tricount_id = p.tricount_id AND d.initiator = p.user_id
                 WHERE p.tricount_id = get_tricount_balance.tricount_id
@@ -550,10 +550,10 @@ begin
                 SELECT
                     p.user_id,
                     COALESCE(SUM(
-                                     (d.amount * (CAST((rep->>'weight') AS numeric) /
-                                                  (SELECT SUM(CAST((r->>'weight') AS numeric))
-                                                   FROM jsonb_array_elements(d.repartition) r))
-                                         )), 0)::numeric(10,2) as amount  -- Arrondi à 2 décimales
+                                     d.amount * (CAST((rep->>'weight') AS numeric) /
+                                                 (SELECT SUM(CAST((r->>'weight') AS numeric))
+                                                  FROM jsonb_array_elements(d.repartition) r))
+                             ), 0)::numeric(10,2) as amount
                 FROM participation p
                          CROSS JOIN depense d
                          CROSS JOIN jsonb_array_elements(d.repartition) rep
@@ -561,20 +561,28 @@ begin
                   AND p.tricount_id = d.tricount_id
                   AND rep->>'user' = CAST(p.user_id AS text)
                 GROUP BY p.user_id
+            ),
+            base_results AS (
+                SELECT
+                    p.user_id,
+                    COALESCE(paid.amount, 0)::numeric(10,2) as paid,
+                    COALESCE(due.amount, 0)::numeric(10,2) as due,
+                    (COALESCE(paid.amount, 0) - COALESCE(due.amount, 0))::numeric(10,2) as balance
+                FROM participation p
+                         LEFT JOIN paid_amounts paid ON paid.user_id = p.user_id
+                         LEFT JOIN due_amounts due ON due.user_id = p.user_id
+                WHERE p.tricount_id = get_tricount_balance.tricount_id
             )
         SELECT
-            p.user_id, -- c'est le param "user:" de la response postman
-            COALESCE(paid.amount, 0)::numeric(10,2) as paid,
-            COALESCE(due.amount, 0)::numeric(10,2) as due,
-            (COALESCE(paid.amount, 0) - COALESCE(due.amount, 0))::numeric(10,2) as balance
-        FROM participation p
-                 LEFT JOIN paid_amounts paid ON paid.user_id = p.user_id
-                 LEFT JOIN due_amounts due ON due.user_id = p.user_id
-        WHERE p.tricount_id = get_tricount_balance.tricount_id;
+            base_results.user_id,
+            -- Convertir en texte, supprimer les zéros à la fin et reconvertir en numeric
+            trim(trailing '0' from trim(trailing '.' from base_results.paid::text))::numeric as paid,
+            trim(trailing '0' from trim(trailing '.' from base_results.due::text))::numeric as due,
+            trim(trailing '0' from trim(trailing '.' from base_results.balance::text))::numeric as balance
+        FROM base_results;
 
 end;
 $$ language plpgsql security definer;
-
 grant execute on function get_tricount_balance(integer) to authenticated;
 
 
