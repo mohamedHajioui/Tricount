@@ -16,7 +16,9 @@ class TricountListNotifyer extends AsyncNotifier<List<Tricount>?>{
         ref.read(tricountservice).getTricountList());
   }
   
+  
 }
+
 
 final tricountnotifyer =
 AsyncNotifierProvider<TricountListNotifyer, List<Tricount>?>(() => TricountListNotifyer()); 

@@ -3,6 +3,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:prbd_2425_a07/models/tricount.dart';
 import 'package:prbd_2425_a07/providers/auth_service_provider.dart';
 import 'package:prbd_2425_a07/providers/tricount_list_provider.dart';
+import 'package:prbd_2425_a07/views/pages/add_tricount.dart';
 import '../widgets/tricound_card.dart';
 import 'package:prbd_2425_a07/providers/theme_provider.dart';
 import 'package:prbd_2425_a07/providers/reset_db_provider.dart';
@@ -29,7 +30,12 @@ class TricountListPage extends ConsumerWidget {
         actions: [
           IconButton(
             onPressed: () {
-              Navigator.pushNamed(context, '/addtricount');
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => AddTricountPage(tricountId: 0),
+                ),
+              );
             }, // + button
             icon: Icon(Icons.add),
           ),

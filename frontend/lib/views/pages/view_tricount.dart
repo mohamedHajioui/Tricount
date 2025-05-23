@@ -1,6 +1,7 @@
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter/material.dart';
 import 'package:prbd_2425_a07/providers/current_tricount_provider.dart';
+import 'package:prbd_2425_a07/views/pages/add_tricount.dart';
 import 'package:prbd_2425_a07/views/widgets/operation_card.dart';
 import 'package:prbd_2425_a07/views/widgets/tricount_total_bar.dart';
 
@@ -129,9 +130,11 @@ class _TricountViewState extends ConsumerState<TricountView> {
           IconButton(
             icon: const Icon(Icons.edit),
             onPressed: () {
-              // TODO: Implémenter l'édition du tricount
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Édition du tricount à implémenter')),
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => AddTricountPage(tricountId: tricount.id),
+                ),
               );
             },
           ),

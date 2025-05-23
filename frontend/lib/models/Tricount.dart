@@ -1,4 +1,7 @@
 // lib/models/tricount.dart
+import 'dart:convert';
+
+import 'package:prbd_2425_a07/core/services/api_client.dart';
 import 'package:prbd_2425_a07/models/depense.dart';
 import 'package:prbd_2425_a07/models/user.dart';
 
@@ -6,7 +9,7 @@ class Tricount {
   final int id;
   final String title;
   final String? description;
-  final DateTime dateHour;
+  final DateTime? dateHour;
   final int creator;
   final List<User> participants;
   final List<Depense> depenses;
@@ -44,4 +47,6 @@ class Tricount {
   // Trouve le nom du créateur
   String get creatorName =>
       findParticipant(creator)?.fullName ?? 'Unknown';
+  
+  
 }
