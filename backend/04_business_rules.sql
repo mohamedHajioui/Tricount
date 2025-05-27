@@ -2,7 +2,7 @@ alter table users
     add constraint unique_email unique (email);
 
 alter table users
-    add constraint chk_full_name_length check (length(users.full_name) >= 3);
+    add constraint chek_full_name_length check (length(users.full_name) >= 3);
 
 alter table users
     add constraint chk_iban_format
@@ -127,7 +127,7 @@ begin
         select 1
         from depense d
         where d.tricount_id = old.tricount_id
-            and d.repartition @> format('[{"user_id": %s}]', old.user_id)::jsonb
+            and d.repartition @> format('[{"user": %s}]', old.user_id)::jsonb
     ) into v_user_in_depense;
     
     if v_user_in_depense then
@@ -143,7 +143,7 @@ before delete on participation
 for each row 
 execute procedure check_participation_deletion();
 CREATE OR REPLACE FUNCTION check_repartition_participants()
-    RETURNS TRIGGER AS $$
+    RETURNS TRIGGER set search_path from current as $$
 DECLARE
     v_user_id integer;
 BEGIN
@@ -169,9 +169,12 @@ BEGIN
 
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql security definer;
 
-CREATE or replace TRIGGER check_repartition_participants_trigger
-    BEFORE INSERT OR UPDATE ON depense
-    FOR EACH ROW
+CREATE constraint TRIGGER check_repartition_participants_trigger
+    after insert
+    on depense
+    deferrable initially deferred
+    for each row
 EXECUTE FUNCTION check_repartition_participants();
+

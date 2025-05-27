@@ -8,6 +8,8 @@ import 'package:prbd_2425_a07/views/pages/view_tricounts.dart';
 import 'package:prbd_2425_a07/providers/theme_provider.dart';
 import 'package:prbd_2425_a07/views/pages/add_tricount.dart';
 
+import '../views/pages/view_balance.dart';
+
 class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
