@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:prbd_2425_a07/core/services/auth_service.dart';
@@ -6,13 +7,14 @@ import 'package:prbd_2425_a07/models/user.dart';
 import 'package:prbd_2425_a07/providers/auth_service_provider.dart';
 import 'package:prbd_2425_a07/providers/current_tricount_provider.dart';
 import 'package:prbd_2425_a07/providers/get_current_user.dart';
+import 'package:prbd_2425_a07/providers/savetricount_provider.dart';
 import 'package:prbd_2425_a07/providers/users_provider.dart';
 
 class AddTricountPage extends ConsumerStatefulWidget {
   final int tricountId;
 
   const AddTricountPage({required this.tricountId, Key? key}) : super(key: key);
-  
+
   @override
   ConsumerState<AddTricountPage> createState() => _AddTricountPageState();
 }
@@ -60,22 +62,14 @@ class _AddTricountPageState extends ConsumerState<AddTricountPage> {
           : null;
     });
   }
-  
+
   @override
   Widget build(BuildContext context) {
     final current_user = ref.read(authUserProvider).value;
-    
-    Tricount? tricount = null;
-    
-    if(widget.tricountId == 0) {
-       tricount = new Tricount(id: 0, title: "", dateHour: null, creator: current_user!.id, participants: [], depenses: []);
-    }
-    
-    else{
-      final tricount_state = ref.read(currentTricountProvider);
-       tricount = tricount_state.tricount;
-      
-    }
+    final tricount_state = ref.read(currentTricountProvider);
+
+    Tricount tricount = tricount_state.tricount??new Tricount(id: 0, title: "", dateHour: null, creator: current_user!.id, participants: [], depenses: []);
+
     final usersListAsync = ref.watch(users_listnotifyer);
     final currentUserAsync = ref.watch(logged_usernotifyer);
 
@@ -87,7 +81,7 @@ class _AddTricountPageState extends ConsumerState<AddTricountPage> {
           });
           return const Scaffold();
         }
-        
+
         return Scaffold(
           appBar: AppBar(
             backgroundColor: Colors.blue,
@@ -99,12 +93,33 @@ class _AddTricountPageState extends ConsumerState<AddTricountPage> {
             actions: [
               IconButton(
                 icon: const Icon(Icons.save),
-                onPressed: () {
+                onPressed: () async {
                   validateInputs();
                   if (titleError == null && descError == null) {
-                    // Save logic here
+                    tricount.title = titleController.text.trim();
+                    tricount.description = descController.text.trim();
+                    tricount.participants = addedUsers;
+
+                    final notifier = ref.read(saveTricountNotifierProvider.notifier);
+
+                    try {
+                      await notifier.save(tricount);
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Tricount saved successfully')),
+                        );
+                        Navigator.pop(context); // Or navigate to the list page
+                      }
+                    } catch (e) {
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Failed to save: $e')),
+                        );
+                      }
+                    }
                   }
                 },
+
               ),
             ],
           ),

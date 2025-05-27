@@ -7,12 +7,12 @@ import 'package:prbd_2425_a07/models/user.dart';
 
 class Tricount {
   final int id;
-  final String title;
-  final String? description;
+  String title;
+  String? description;
   final DateTime? dateHour;
   final int creator;
-  final List<User> participants;
-  final List<Depense> depenses;
+  List<User> participants;
+  List<Depense> depenses;
 
   Tricount({
     required this.id,

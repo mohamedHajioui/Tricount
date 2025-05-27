@@ -743,3 +743,6 @@ $$;
 grant execute on function save_tricount to authenticated;
 GRANT EXECUTE ON FUNCTION reset_database() TO anon;
 
+
+select * from tricount;
+
