@@ -216,7 +216,6 @@ $$
 $$ language plpgsql security definer;
 grant execute on function check_email_available(text, integer) to anon;
 
-DROP FUNCTION check_full_name_available(text,integer);
 create or replace function check_full_name_available(fullName text, user_id integer default 0)
     returns boolean as
 $$
@@ -511,7 +510,7 @@ end;
 $$ language plpgsql security definer;
 
 grant execute on function delete_operation(integer) to authenticated;
-DROP FUNCTION get_tricount_balance(integer);
+--DROP FUNCTION get_tricount_balance(integer);
 create or replace function get_tricount_balance(tricount_id integer)
     returns table (
                       "user" integer,
