@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:prbd_2425_a07/core/services/api_client.dart';
 import 'package:prbd_2425_a07/models/depense.dart';
+import 'package:prbd_2425_a07/models/repartition.dart';
 import 'package:prbd_2425_a07/models/user.dart';
 
 class Tricount {
@@ -47,6 +48,20 @@ class Tricount {
   // Trouve le nom du créateur
   String get creatorName =>
       findParticipant(creator)?.fullName ?? 'Unknown';
-  
-  
+
+  List<int> unremovable_list_const(){
+    List<int> unremovable = [];
+    
+    depenses.forEach ((Depense depense) {
+      depense.repartitions.forEach((Repartition repartition){
+        if( repartition.user != id){
+          unremovable.add(repartition.user);
+        }
+      });
+    });
+    
+    return unremovable;
+  }
+
+
 }

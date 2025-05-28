@@ -40,7 +40,8 @@ class TricountListPage extends ConsumerWidget {
             icon: Icon(Icons.add),
           ),
           IconButton(
-            onPressed: () {}, // - button
+            onPressed: () {
+            }, // - button
             icon: Icon(Icons.refresh),
           ),
         ],

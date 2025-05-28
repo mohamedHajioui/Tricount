@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:prbd_2425_a07/core/services/auth_service.dart';
 import 'package:prbd_2425_a07/models/Tricount.dart';
+import 'package:prbd_2425_a07/models/depense.dart';
+import 'package:prbd_2425_a07/models/repartition.dart';
 import 'package:prbd_2425_a07/models/user.dart';
 import 'package:prbd_2425_a07/providers/auth_service_provider.dart';
 import 'package:prbd_2425_a07/providers/current_tricount_provider.dart';
@@ -14,7 +16,7 @@ class AddTricountPage extends ConsumerStatefulWidget {
   final int tricountId;
 
   const AddTricountPage({required this.tricountId, Key? key}) : super(key: key);
-
+  
   @override
   ConsumerState<AddTricountPage> createState() => _AddTricountPageState();
 }
@@ -22,10 +24,24 @@ class AddTricountPage extends ConsumerStatefulWidget {
 class _AddTricountPageState extends ConsumerState<AddTricountPage> {
   final titleController = TextEditingController();
   final descController = TextEditingController();
-  final List<User> addedUsers = [];
+   List<User> addedUsers = [];
+   List<User> unremovable_users = [];
   User? selectedUser;
   String? titleError;
   String? descError;
+  
+  
+  Tricount tricount(){
+    final current_user = ref.read(authUserProvider).value;
+    final tricount_state = ref.read(currentTricountProvider);
+
+    Tricount tricount = tricount_state.tricount??new Tricount(id: 0, title: "", dateHour: null, creator: current_user!.id, participants: [], depenses: []);
+    
+    return tricount;
+  }
+  
+  
+  
 
   @override
   void initState() {
@@ -33,6 +49,7 @@ class _AddTricountPageState extends ConsumerState<AddTricountPage> {
     // Live validation while typing
     titleController.addListener(validateInputs);
     descController.addListener(validateInputs);
+    
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final loggedUser = ref.read(logged_usernotifyer).asData?.value;
@@ -65,10 +82,14 @@ class _AddTricountPageState extends ConsumerState<AddTricountPage> {
 
   @override
   Widget build(BuildContext context) {
-    final current_user = ref.read(authUserProvider).value;
-    final tricount_state = ref.read(currentTricountProvider);
-
-    Tricount tricount = tricount_state.tricount??new Tricount(id: 0, title: "", dateHour: null, creator: current_user!.id, participants: [], depenses: []);
+    
+    final c_tricount = tricount();
+    titleController.text = c_tricount.title;
+    descController.text = c_tricount.description??'';
+    addedUsers = c_tricount.participants;
+    
+    final unremovable = c_tricount.unremovable_list_const();
+    
 
     final usersListAsync = ref.watch(users_listnotifyer);
     final currentUserAsync = ref.watch(logged_usernotifyer);
@@ -96,14 +117,15 @@ class _AddTricountPageState extends ConsumerState<AddTricountPage> {
                 onPressed: () async {
                   validateInputs();
                   if (titleError == null && descError == null) {
-                    tricount.title = titleController.text.trim();
-                    tricount.description = descController.text.trim();
-                    tricount.participants = addedUsers;
+                    debugPrint('tricountid : ${c_tricount.id}');
+                    c_tricount.title = titleController.text.trim();
+                    c_tricount.description = descController.text.trim();
+                    c_tricount.participants = addedUsers;
 
                     final notifier = ref.read(saveTricountNotifierProvider.notifier);
 
                     try {
-                      await notifier.save(tricount);
+                      await notifier.save(c_tricount);
                       if (mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text('Tricount saved successfully')),
@@ -185,7 +207,7 @@ class _AddTricountPageState extends ConsumerState<AddTricountPage> {
                   return ListTile(
                     leading: const Icon(Icons.account_circle),
                     title: Text(user.fullName, style: const TextStyle(fontWeight: FontWeight.bold)),
-                    trailing: isLoggedUser
+                    trailing: isLoggedUser || unremovable.contains(user.id)
                         ? null
                         : IconButton(
                       icon: const Icon(Icons.person_remove_alt_1),
