@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:prbd_2425_a07/core/services/api_client.dart';
 import 'package:prbd_2425_a07/models/depense.dart';
 import 'package:prbd_2425_a07/models/repartition.dart';
 import 'package:prbd_2425_a07/models/Tricount.dart';
@@ -134,7 +137,7 @@ class CurrentTricountNotifier extends ChangeNotifier {
   }
 
   // Supprimer une dépense
-  Future<void> deleteDepense(int depenseId) async {
+  Future<void> deleteDepense({required int depenseId}) async {
     if (_tricount == null) {
       _error = "Aucun tricount sélectionné";
       notifyListeners();
@@ -147,10 +150,11 @@ class CurrentTricountNotifier extends ChangeNotifier {
 
     try {
       // Appel à une méthode de suppression (à implémenter dans votre service API)
-      // await ApiClient.post(' delete_operation', body: json.encode({"id": depenseId}));
+      final res = await ApiClient.post('delete_operation', body: json.encode({"id": depenseId}));
 
       // Une autre approche serait d'ajouter une méthode statique à Depense:
       // await Depense.deleteOperation(depenseId);
+      debugPrint('HTTP ${res.statusCode}  ${res.body}');
 
       // refresh pareil encore
       await refresh();

@@ -216,7 +216,7 @@ $$
 $$ language plpgsql security definer;
 grant execute on function check_email_available(text, integer) to anon;
 
-DROP FUNCTION check_full_name_available(text,integer);
+
 create or replace function check_full_name_available(fullName text, user_id integer default 0)
     returns boolean as
 $$
@@ -472,25 +472,28 @@ grant execute on function save_operation(
     jsonb,      -- repartitions
     timestamp   -- operation_date
     ) to authenticated;
-create or replace function delete_operation(operation_id integer)
+
+create or replace function delete_operation(id integer)  -- Changé operation_id en id
     returns void as $$
 declare
     current_user_id integer;
     is_admin boolean;
+    operation_id integer;  -- Variable locale pour éviter l'ambiguïté
 begin
+    operation_id := id;
     -- Vérifie que l'utilisateur est connecté
     perform auth.check_logged();
     current_user_id := auth.id();
 
     -- Vérifie que la dépense existe
-    if not exists(select 1 from depense where id = operation_id) then
+    if not exists(select 1 from depense where depense.id = operation_id) then
         raise exception 'Dépense non trouvée';
     end if;
 
     -- Vérifie si l'utilisateur est admin
     select role = 'admin' into is_admin
     from users
-    where id = current_user_id;
+    where users.id = current_user_id;
 
     -- Si pas admin, vérifie que l'utilisateur est participant du tricount
     if not is_admin then
@@ -506,12 +509,12 @@ begin
     end if;
 
     -- Supprime la dépense
-    delete from depense where id = operation_id;
+    delete from depense where depense.id = operation_id;
 end;
 $$ language plpgsql security definer;
 
 grant execute on function delete_operation(integer) to authenticated;
-DROP FUNCTION get_tricount_balance(integer);
+
 create or replace function get_tricount_balance(tricount_id integer)
     returns table (
                       "user" integer,

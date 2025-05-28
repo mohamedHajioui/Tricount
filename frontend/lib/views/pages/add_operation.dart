@@ -172,6 +172,43 @@ class _AddOperationPageState extends ConsumerState<AddOperationPage> {
       }
     });
   }
+  Future<void> _deleteOperation() async {
+    // Afficher une boîte de dialogue de confirmation
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Confirmation'),
+          content: const Text(
+            'Are you sure you want to delete this operation?',
+          ),
+          actions: [
+            TextButton(
+              child: const Text('Annuler'),
+              onPressed: () => Navigator.of(context).pop(false),
+            ),
+            TextButton(
+              child: const Text(
+                'Supprimer',
+                style: TextStyle(color: Colors.red),
+              ),
+              onPressed: () => Navigator.of(context).pop(true),
+            ),
+          ],
+        );
+      },
+    );
+
+    // Si l'utilisateur confirme la suppression
+    if (confirm == true) {
+      final tricountNotifier = ref.read(currentTricountProvider.notifier);
+      await tricountNotifier.deleteDepense(depenseId: widget.depenseId!);
+
+      if (mounted) {
+        Navigator.pop(context);
+      }
+    }
+  }
 
   Future<void> _saveOperation() async {
     // Valider tous les champs avant soumission
@@ -510,6 +547,11 @@ class _AddOperationPageState extends ConsumerState<AddOperationPage> {
             icon: const Icon(Icons.save, color: Colors.white),
             onPressed: _isLoading ? null : _saveOperation,
           ),
+          if(isEditing) // si c'est edit on affiche delete 
+          IconButton(
+            icon: const Icon(Icons.delete, color: Colors.white),
+            onPressed: _isLoading ? null : _deleteOperation,
+          )
         ],
       ),
       body: SingleChildScrollView(
