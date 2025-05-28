@@ -473,12 +473,12 @@ grant execute on function save_operation(
     timestamp   -- operation_date
     ) to authenticated;
 
-create or replace function delete_operation(id integer)  -- Changé operation_id en id
+create or replace function delete_operation(id integer) 
     returns void as $$
 declare
     current_user_id integer;
     is_admin boolean;
-    operation_id integer;  -- Variable locale pour éviter l'ambiguïté
+    operation_id integer;  -- Variable locale pour éviter quiproquooo
 begin
     operation_id := id;
     -- Vérifie que l'utilisateur est connecté
