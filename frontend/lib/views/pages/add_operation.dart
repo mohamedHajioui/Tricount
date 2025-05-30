@@ -302,21 +302,43 @@ class _AddOperationPageState extends ConsumerState<AddOperationPage> {
 
   // Méthode pour le champ de titre
   Widget _titleFormField(BuildContext context, Future<void> Function(String) onFieldSubmitted) {
+    
+    final isTitleValid = _titleController.text.trim().isNotEmpty && _titleController.errorText == null;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Title (*)',
-          style: TextStyle(color: Colors.grey),
-        ),
         TextFormField(
           controller: _titleController,
           autovalidateMode: AutovalidateMode.onUserInteraction,
           decoration: InputDecoration(
+            labelText: 'Title (*)',
+            labelStyle: TextStyle(
+              color: isTitleValid ? Colors.grey : Colors.red,
+            ),
+            floatingLabelBehavior: FloatingLabelBehavior.auto,
+            enabledBorder: OutlineInputBorder(
+              borderSide: BorderSide(
+                color: isTitleValid ? Colors.grey : Colors.red,
+                width: 1,
+              ),
+            ),
+
+            // Contour quand le champ a le focus
+            focusedBorder: OutlineInputBorder(
+              borderSide: BorderSide(
+                color: isTitleValid ? Colors.blue : Colors.red,
+                width: 2,
+              ),
+            ),
             border: const OutlineInputBorder(),
-            hintText: 'Title',
             errorText: _titleController.errorText,
           ),
+          onChanged: (text) {
+            // Obligatoire pour que le champ se rebuild à chaque changement
+            // → à mettre dans un StatefulWidget, avec setState() !
+            (context as Element).markNeedsBuild(); // Ou mieux : setState(() {});
+          },
           onFieldSubmitted: onFieldSubmitted,
         ),
       ],
@@ -325,23 +347,44 @@ class _AddOperationPageState extends ConsumerState<AddOperationPage> {
 
   // Méthode pour le champ de montant
   Widget _amountFormField(BuildContext context, Future<void> Function(String) onFieldSubmitted) {
+    final isAmountValid =_amountController.text.trim().isNotEmpty && _amountController.errorText == null;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Amount (*)',
-          style: TextStyle(color: Colors.grey),
-        ),
         TextFormField(
           controller: _amountController,
           autovalidateMode: AutovalidateMode.onUserInteraction,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
           decoration: InputDecoration(
+            prefixText: '€ ',
+            prefixStyle: const TextStyle(color: Colors.black),
+            labelText: 'Amount (*)',
+            labelStyle: TextStyle(
+              color: isAmountValid ? Colors.grey : Colors.red,
+            ),
+            floatingLabelBehavior: FloatingLabelBehavior.auto,
+            enabledBorder: OutlineInputBorder(
+              borderSide: BorderSide(
+                color: isAmountValid ? Colors.grey : Colors.red,
+                width: 1,
+              ),
+            ),
+
+            // Contour quand le champ a le focus
+            focusedBorder: OutlineInputBorder(
+              borderSide: BorderSide(
+                color: isAmountValid ? Colors.blue : Colors.red,
+                width: 2,
+              ),
+            ),
             border: const OutlineInputBorder(),
-            prefixText: '€',
-            hintText: '0.00',
             errorText: _amountController.errorText,
           ),
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          onChanged: (_) {
+            // Nécessaire pour que la couleur change dynamiquement
+            (context as Element).markNeedsBuild();
+          },
           onFieldSubmitted: onFieldSubmitted,
         ),
       ],

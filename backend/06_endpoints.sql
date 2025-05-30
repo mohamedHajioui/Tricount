@@ -1,8 +1,8 @@
 create or replace function save_tricount(
-    id integer,                   
-    title text,                   
-    description text default null, --  et valeur par défaut
-    participants integer[] default null --  valeur par défaut
+    id integer,
+    title text,
+    description text default null,
+    participants integer[] default null
 )
     returns json as
 $$
@@ -11,33 +11,29 @@ declare
     new_tricount_id integer;
     tricount_creator_id integer;
     final_participants integer[];
+    participant_to_remove integer;
 begin
     -- Obtenir l'ID de l'utilisateur connecté
     perform auth.check_logged();
     current_user_id := auth.id();
 
-    -- S'assurer que l'utilisateur connecté est toujours inclus comme participant
+    -- Initialiser participants
     if participants is null then
-        final_participants := array[current_user_id];
+        final_participants := array[]::integer[];
     else
-        -- Vérifier si l'utilisateur connecté est déjà dans les participants
-        if not (current_user_id = any(participants)) then
-            final_participants := array_append(participants, current_user_id);
-        else
-            final_participants := participants;
-        end if;
+        final_participants := participants;
     end if;
 
     -- Cas création (id = 0)
     if id = 0 then
-        -- Insérer dans tricount (l'utilisateur connecté est le créateur)
+        -- Ajouter l'utilisateur connecté comme participant s'il n'y est pas
+        if not (current_user_id = any(final_participants)) then
+            final_participants := array_append(final_participants, current_user_id);
+        end if;
+
+        -- Insérer dans tricount
         insert into tricount(title, description, participant, creator)
-        values (
-                   title,
-                   description,
-                   final_participants,
-                   current_user_id
-               )
+        values (title, description, final_participants, current_user_id)
         returning tricount.id into new_tricount_id;
 
         -- Ajouter tous les participants dans la table participation
@@ -45,54 +41,11 @@ begin
         select unnest(final_participants), new_tricount_id
         on conflict do nothing;
 
-        -- Retourner le tricount complet au format JSON
-        return (
-            select json_build_object(
-                           'id', t.id,
-                           'title', t.title,
-                           'description', t.description,
-                           'created_at', t.date_hour,
-                           'creator', t.creator,
-                           'participants', (
-                               select json_agg(
-                                              json_build_object(
-                                                      'id', u.id,
-                                                      'email', u.email,
-                                                      'full_name', u.full_name,
-                                                      'iban', u.iban,
-                                                      'role', u.role
-                                              )
-                                      )
-                               from users u
-                               where u.id = any(t.participant)
-                           ),
-                           'operations', (
-                               select coalesce(
-                                              json_agg(
-                                                      json_build_object(
-                                                              'id', d.id,
-                                                              'title', d.title,
-                                                              'amount', d.amount,
-                                                              'operation_date', d.operation_date,
-                                                              'initiator', d.initiator,
-                                                              'created_at', d.created_at,
-                                                              'repartitions', d.repartition
-                                                      )
-                                              ),
-                                              '[]'::json
-                                      )
-                               from depense d
-                               where d.tricount_id = t.id
-                           )
-                   )
-            from tricount t
-            where t.id = new_tricount_id
-        );
     else
         -- Cas modification (id > 0)
 
-        -- Vérifier que l'utilisateur a le droit de modifier ce tricount
-        if not exists (
+        -- Vérifier que l'utilisateur a le droit de modifier
+        if not auth.is_admin() and not exists (
             select 1 from tricount
             where tricount.id = save_tricount.id
               and (creator = current_user_id or current_user_id = any(participant))
@@ -100,14 +53,37 @@ begin
             raise exception 'Accès non autorisé à ce tricount';
         end if;
 
-        -- Récupérer le créateur du tricount
+        -- Récupérer le créateur
         select creator into tricount_creator_id
         from tricount
         where tricount.id = save_tricount.id;
 
-        -- S'assurer que le créateur reste dans les participants
+        -- VÉRIFICATION : Le créateur doit rester dans les participants
         if not (tricount_creator_id = any(final_participants)) then
-            final_participants := array_append(final_participants, tricount_creator_id);
+            raise exception 'You cannot remove the participation of the owner of a tricount';
+        end if;
+
+        -- Obtenir le premier participant problématique
+        select old_participant into participant_to_remove
+        from tricount t
+                 cross join unnest(t.participant) as old_participant
+        where t.id = save_tricount.id
+          and not (old_participant = any(final_participants))
+          and exists (
+            select 1 from depense d
+            where d.tricount_id = t.id
+              and (
+                d.initiator = old_participant
+                    or exists (
+                    select 1 from jsonb_array_elements(d.repartition) as rep
+                    where (rep->>'user')::integer = old_participant
+                )
+                )
+        )
+        limit 1; --s'arrete au premier user qu'on peut pas supprimer 
+
+        if participant_to_remove is not null then
+            raise exception 'Cannot remove participant % who is involved in operations', participant_to_remove;
         end if;
 
         -- Mettre à jour le tricount
@@ -117,67 +93,61 @@ begin
             participant = final_participants
         where tricount.id = save_tricount.id;
 
-        -- Supprimer les participations qui ne sont plus dans le tableau
-        -- SAUF le créateur et ceux impliqués dans des opérations
+        -- Synchroniser avec la table participation
+        -- Supprimer ceux qui ne sont plus dans le tableau
         delete from participation p
         where p.tricount_id = save_tricount.id
-          and not (p.user_id = any(final_participants))
-          and p.user_id != tricount_creator_id
-          and not exists (
-            select 1 from depense d
-                              join jsonb_array_elements(d.repartition) as rep on (rep->>'user')::integer = p.user_id
-            where d.tricount_id = save_tricount.id
-        );
+          and not (p.user_id = any(final_participants));
 
-        -- Ajouter les nouvelles participations
+        -- Ajouter les nouveaux
         insert into participation(user_id, tricount_id)
         select unnest(final_participants), save_tricount.id
         on conflict do nothing;
-
-        -- Retourner le tricount complet au format JSON
-        return (
-            select json_build_object(
-                           'id', t.id,
-                           'title', t.title,
-                           'description', t.description,
-                           'created_at', t.date_hour,
-                           'creator', t.creator,
-                           'participants', (
-                               select json_agg(
-                                              json_build_object(
-                                                      'id', u.id,
-                                                      'email', u.email,
-                                                      'full_name', u.full_name,
-                                                      'iban', u.iban,
-                                                      'role', u.role
-                                              )
-                                      )
-                               from users u
-                               where u.id = any(t.participant)
-                           ),
-                           'operations', (
-                               select coalesce(
-                                              json_agg(
-                                                      json_build_object(
-                                                              'id', d.id,
-                                                              'title', d.title,
-                                                              'amount', d.amount,
-                                                              'operation_date', d.operation_date,
-                                                              'initiator', d.initiator,
-                                                              'created_at', d.created_at,
-                                                              'repartitions', d.repartition
-                                                      )
-                                              ),
-                                              '[]'::json
-                                      )
-                               from depense d
-                               where d.tricount_id = t.id
-                           )
-                   )
-            from tricount t
-            where t.id = save_tricount.id
-        );
     end if;
+
+    -- Retourner le tricount complet (partie commune)
+    return (
+        select json_build_object(
+                       'id', t.id,
+                       'title', t.title,
+                       'description', t.description,
+                       'created_at', t.date_hour,
+                       'creator', t.creator,
+                       'participants', (
+                           select json_agg(
+                                          json_build_object(
+                                                  'id', u.id,
+                                                  'email', u.email,
+                                                  'full_name', u.full_name,
+                                                  'iban', u.iban,
+                                                  'role', u.role
+                                          )
+                                  )
+                           from users u
+                           where u.id = any(t.participant)
+                       ),
+                       'operations', (
+                           select coalesce(
+                                          json_agg(
+                                                  json_build_object(
+                                                          'id', d.id,
+                                                          'title', d.title,
+                                                          'amount', d.amount,
+                                                          'operation_date', d.operation_date,
+                                                          'initiator', d.initiator,
+                                                          'created_at', d.created_at,
+                                                          'repartitions', d.repartition
+                                                  )
+                                          ),
+                                          '[]'::json
+                                  )
+                           from depense d
+                           where d.tricount_id = t.id
+                       )
+               )
+        from tricount t
+        where t.id = coalesce(new_tricount_id, save_tricount.id)
+    );
 end;
 $$ language plpgsql security definer;
 
@@ -185,16 +155,23 @@ grant execute on function save_tricount(integer, text, text, integer[]) to authe
 /*DROP FUNCTION save_tricount(integer,text,text,integer,integer[]);*/
 
 create or replace function get_user_data()
-    returns setof users as
+    returns json as
 $$
 begin
     perform auth.check_logged();
-    return query select *
+    return (select json_build_object('id',users.id,
+                              'email',users.email,
+                              'full_name',users.full_name,
+                              'iban',users.iban,
+                              'role',users.role
+                            )
                  from users
-                 where users.email = auth.email();
+                 where users.email = auth.email()
+            );
 end;
 $$ language plpgsql security definer;
 grant execute on function get_user_data() to authenticated;
+
 
 create or replace function check_email_available(email text, user_id integer default 0)
 returns boolean as
@@ -217,19 +194,19 @@ $$ language plpgsql security definer;
 grant execute on function check_email_available(text, integer) to anon;
 
 
-create or replace function check_full_name_available(fullName text, user_id integer default 0)
+create or replace function check_full_name_available(full_name text, user_id integer default 0)
     returns boolean as
 $$
 begin
     if user_id = 0 then
         return not exists(
-            select 1 from users where users.full_name = check_full_name_available.fullName
+            select 1 from users where lower(users.full_name) = lower(check_full_name_available.full_name)
 
         );
     else
         return not exists(
             select 1 from users
-            where users.full_name = check_full_name_available.fullName
+            where lower(users.full_name) = lower(check_full_name_available.full_name)
               and users.id <> check_full_name_available.user_id
         );
     end if;
@@ -238,16 +215,20 @@ $$ language plpgsql security definer;
 grant execute on function check_full_name_available(text,integer) to anon;
 
 
-
 create or replace function get_all_users()
-returns setof users as
+    returns table(
+                     id int,
+                     email varchar(256),
+                     full_name varchar(256),
+                     iban varchar(256),
+                     role role_type
+                 ) as
 $$
-  begin 
-      return query
-        select *
+begin
+    return query
+        select users.id, users.email, users.full_name, users.iban, users.role
         from users
         order by full_name;
-      
 end;
 $$ language plpgsql security definer;
 grant execute on function get_all_users() to anon;
@@ -272,7 +253,7 @@ begin
             where lower(trim(tricount.title)) = check_tricount_title_available.title
               and creator = current_user_id
         );
-    else
+    else 
         -- Cas modification : vérifie que le titre n'existe pas déjà pour cet utilisateur
         -- en excluant le tricount en cours de modification
         return not exists(
@@ -351,6 +332,19 @@ declare
 begin
     perform auth.check_logged();
     current_user_id := auth.id();
+      
+-- Vérifier que l'utilisateur peut agir sur ce tricount
+    if not auth.is_admin() and not exists (
+        select 1 from tricount t
+        where t.id = save_operation.tricount_id
+          and (t.creator = current_user_id or current_user_id = any(t.participant))
+    ) then
+        raise exception 'Accès non autorisé à ce tricount';
+    end if;
+    
+    if not exists (select 1 from tricount where tricount.id = save_operation.tricount_id) then
+        raise exception 'Tricount not found';
+    end if;
 
     -- Assignez la valeur du paramètre id à la variable locale
     depense_id := id;
@@ -414,6 +408,9 @@ begin
             where d.id = new_operation_id
         );
     else
+        if not exists (select 1 from depense where depense.id = depense_id) then
+            raise exception 'Operation not found';
+        end if;
         -- Ajouter l'initiateur à la liste des participants s'il n'y est pas déjà
         if not (initiator = any(participant_ids)) then
             participant_ids := array_append(participant_ids, initiator);
@@ -607,78 +604,86 @@ begin
     perform auth.check_logged();
     current_user_id := auth.id();
 
-    return (
-        select json_agg(
-                       json_build_object(
-                               'id', tricount_data.id,
-                               'title', tricount_data.title,
-                               'description', tricount_data.description,
-                               'created_at', tricount_data.created_at,
-                               'creator', tricount_data.creator,
-                               'participants', tricount_data.participants,
-                               'operations', tricount_data.operations
+    return COALESCE(
+            (
+                select json_agg(
+                               json_build_object(
+                                       'id', tricount_data.id,
+                                       'title', tricount_data.title,
+                                       'description', tricount_data.description,
+                                       'created_at', tricount_data.created_at,
+                                       'creator', tricount_data.creator,
+                                       'participants', tricount_data.participants,
+                                       'operations', tricount_data.operations
+                               )
+                               order by tricount_data.last_operation_date desc nulls last, tricount_data.created_at desc
                        )
-                       order by tricount_data.last_operation_date desc nulls last, tricount_data.created_at desc
-               )
-        from (
-                 select
-                     t.id,
-                     t.title,
-                     t.description,
-                     t.date_hour as created_at,
-                     t.creator,
-                     COALESCE(
-                             (select max(d.operation_date)
-                              from depense d
-                              where d.tricount_id = t.id),
-                             t.date_hour
-                     ) as last_operation_date,
-                     (
-                         -- Get participants details
-                         select json_agg(user_details)
-                         from (
-                                  select
-                                      u.id,
-                                      u.email,
-                                      u.full_name,
-                                      u.iban,
-                                      u.role
-                                  from users u
-                                           join participation p on u.id = p.user_id
-                                  where p.tricount_id = t.id
-                                  order by u.id
-                              ) user_details
-                     ) as participants,
-                     (
-                         -- Get operations details
-                         select COALESCE(json_agg(operation_details order by operation_date desc,id desc ),'[]'::json)
-                         from (
-                                  select
-                                      d.id,
-                                      d.title,
-                                      d.amount,
-                                      to_char(d.operation_date, 'YYYY-MM-DD') as operation_date,
-                                      d.initiator,
-                                      to_char(d.created_at, 'YYYY-MM-DD"T"HH24:MI:SS') as created_at,
-                                      (
-                                          -- Transform repartition format
-                                          select json_agg(
-                                                         json_build_object(
-                                                                 'user', (rep->>'user')::integer,
-                                                                 'weight', (rep->>'weight')::integer
+                from (
+                         select
+                             t.id,
+                             t.title,
+                             t.description,
+                             t.date_hour as created_at,
+                             t.creator,
+                             COALESCE(
+                                     (select max(d.operation_date)
+                                      from depense d
+                                      where d.tricount_id = t.id),
+                                     t.date_hour
+                             ) as last_operation_date,
+                             (
+                                 -- Get participants details
+                                 select json_agg(user_details)
+                                 from (
+                                          select
+                                              u.id,
+                                              u.email,
+                                              u.full_name,
+                                              u.iban,
+                                              u.role
+                                          from users u
+                                                   join participation p on u.id = p.user_id
+                                          where p.tricount_id = t.id
+                                          order by u.id
+                                      ) user_details
+                             ) as participants,
+                             (
+                                 -- Get operations details
+                                 select COALESCE(json_agg(operation_details order by operation_date desc,id desc ),'[]'::json)
+                                 from (
+                                          select
+                                              d.id,
+                                              d.title,
+                                              d.amount,
+                                              to_char(d.operation_date, 'YYYY-MM-DD') as operation_date,
+                                              d.initiator,
+                                              to_char(d.created_at, 'YYYY-MM-DD"T"HH24:MI:SS') as created_at,
+                                              (
+                                                  -- Transform repartition format
+                                                  select json_agg(
+                                                                 json_build_object(
+                                                                         'user', (rep->>'user')::integer,
+                                                                         'weight', (rep->>'weight')::integer
+                                                                 )
                                                          )
-                                                 )
-                                          from jsonb_array_elements(d.repartition) rep
-                                      ) as repartitions
-                                  from depense d
-                                  where d.tricount_id = t.id
-                              ) operation_details
-                     ) as operations
-                 from tricount t
-                          join participation p on t.id = p.tricount_id
-                 where p.user_id = current_user_id
-             ) tricount_data
-    );
+                                                  from jsonb_array_elements(d.repartition) rep
+                                              ) as repartitions
+                                          from depense d
+                                          where d.tricount_id = t.id
+                                      ) operation_details
+                             ) as operations
+                         from tricount t
+                         where
+                             auth.is_admin()
+                            OR exists (
+                             select 1 from participation p
+                             where p.tricount_id = t.id
+                               and p.user_id = current_user_id
+                         )
+                     ) tricount_data
+            ),
+            '[]'::json  --  Retourne [] si aucun tricount
+           );
 end;
 $$ language plpgsql security definer;
 grant execute on function get_my_tricounts() to authenticated;

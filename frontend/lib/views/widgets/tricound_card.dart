@@ -13,6 +13,7 @@ class TricountCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final participantCount = tricount.participants.length;
+    final otherParticipants = participantCount - 1;
 
     return InkWell(
       onTap: () {
@@ -49,7 +50,9 @@ class TricountCard extends StatelessWidget {
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 Text(
-                  'il y\'as $participantCount participant',
+                  otherParticipants > 0
+                      ? 'il y a $otherParticipants participant${otherParticipants > 1 ? 's' : ''}'
+                      : 'you are alone',
                   style: TextStyle(color: Colors.grey[600]),
                 ),
               ],
