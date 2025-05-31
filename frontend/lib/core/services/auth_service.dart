@@ -56,7 +56,6 @@ class AuthService {  // Ajoute la classe !
         'full_name': fullName,
         'iban': ibanValue,
         'password': password,
-        'confirm_password': password,
       }),
     );
     debugPrint('HTTP ${res.statusCode}  ${res.body}');
@@ -79,14 +78,9 @@ class AuthService {  // Ajoute la classe !
       anonymous: false, // Ce flag indique que le token est utilisé dans les headers
     );
 
-    // get_user_data renvoie une liste d'un user
-    final userDataList = jsonDecode(userRes.body) as List;
-    if (userDataList.isEmpty) {
-      throw Exception('No user data returned');
-    }
-    final userData = userDataList.first as Map<String, dynamic>;
-
+    final userData = jsonDecode(userRes.body) as Map<String, dynamic>;
     return User.fromJson(userData);
+
   }
 
 
@@ -116,6 +110,7 @@ class AuthService {  // Ajoute la classe !
       'check_full_name_available?full_name=${Uri.encodeComponent(fullName)}',
       anonymous: true,
     );
+    debugPrint('HTTP ${res.statusCode}  ${res.body}');
     if (res.statusCode != 200) {
       throw Exception('Failed to check name (${res.statusCode})');
     }

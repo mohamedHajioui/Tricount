@@ -133,8 +133,7 @@ create or replace function signup(
     email text,
     full_name text,
     iban text,
-    password text,
-    confirm_password text
+    password text
 ) returns auth.jwt_token as
 $$
 declare
@@ -142,13 +141,9 @@ declare
     v_full_name text := full_name;
     v_iban text := iban;
     v_password text := password;
-    v_confirm_password text := confirm_password;
     result auth.jwt_token;
 begin
-    if v_password <> v_confirm_password then
-        raise invalid_password using message = 'Password and confirm password do not match';
-    end if;
-
+    
     insert into users(email, password, full_name, iban)
     values(v_email, v_password, v_full_name, v_iban);
 
