@@ -34,24 +34,35 @@ class _AddTricountPageState extends ConsumerState<AddTricountPage> {
   Tricount tricount(){
     final current_user = ref.read(authUserProvider).value;
     final tricount_state = ref.read(currentTricountProvider);
+    tricount_state.refresh();
 
     Tricount tricount = tricount_state.tricount??new Tricount(id: 0, title: "", dateHour: null, creator: current_user!.id, participants: [], depenses: []);
     
     return tricount;
   }
-  
-  
-  
+
+
+
 
   @override
   void initState() {
     super.initState();
-    // Live validation while typing
+
     titleController.addListener(validateInputs);
     descController.addListener(validateInputs);
-    
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      final tricount_state = ref.read(currentTricountProvider);
+      final c_tricount = tricount_state.tricount;
+
+      if (c_tricount != null) {
+        titleController.text = c_tricount.title;
+        descController.text = c_tricount.description ?? '';
+        setState(() {
+          addedUsers = c_tricount.participants;
+        });
+      }
+
       final loggedUser = ref.read(logged_usernotifyer).asData?.value;
       if (loggedUser != null && !addedUsers.contains(loggedUser)) {
         setState(() {
@@ -84,9 +95,7 @@ class _AddTricountPageState extends ConsumerState<AddTricountPage> {
   Widget build(BuildContext context) {
     
     final c_tricount = tricount();
-    titleController.text = c_tricount.title;
-    descController.text = c_tricount.description??'';
-    addedUsers = c_tricount.participants;
+
     
     final unremovable = c_tricount.unremovable_list_const();
     
