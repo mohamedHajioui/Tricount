@@ -66,6 +66,10 @@ alter table depense
     add constraint montant_check check ( amount >= 0.01 );
 
 DROP TRIGGER IF EXISTS correcte_operation_date ON tricount;
+-- Ajouter la contrainte à la table depense
+ALTER TABLE depense
+    ADD CONSTRAINT operation_date_not_future
+        CHECK (operation_date::date <= CURRENT_DATE);
 
 CREATE OR REPLACE FUNCTION check_inserted_date() RETURNS TRIGGER as
 $$

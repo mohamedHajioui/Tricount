@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../../providers/auth_service_provider.dart';
+import '../../models/user.dart';
 
 class SignupScreen extends ConsumerStatefulWidget {
   static const routeName = '/signup';
@@ -12,63 +13,25 @@ class SignupScreen extends ConsumerStatefulWidget {
 }
 
 class _SignupScreenState extends ConsumerState<SignupScreen> {
-  /* ---------- controllers & keys ---------- */
-  final _formKey        = GlobalKey<FormState>();
-  final emailCtrl       = TextEditingController();
-  final fullNameCtrl    = TextEditingController();
-  final ibanCtrl        = TextEditingController();
-  final pwdCtrl         = TextEditingController();
-  final confirmPwdCtrl  = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+  final emailCtrl = TextEditingController();
+  final fullNameCtrl = TextEditingController();
+  final ibanCtrl = TextEditingController();
+  final pwdCtrl = TextEditingController();
+  final confirmPwdCtrl = TextEditingController();
 
   final _emailKey = GlobalKey<FormFieldState>();
-  final _nameKey  = GlobalKey<FormFieldState>();
-  final _ibanKey  = GlobalKey<FormFieldState>();
-  final _pwdKey   = GlobalKey<FormFieldState>();
-  final _confKey  = GlobalKey<FormFieldState>();
+  final _nameKey = GlobalKey<FormFieldState>();
+  final _ibanKey = GlobalKey<FormFieldState>();
+  final _pwdKey = GlobalKey<FormFieldState>();
+  final _confKey = GlobalKey<FormFieldState>();
 
-  /* ---------- async state ---------- */
   bool _isEmailAvailable = true;
-  bool _isNameAvailable  = true;
+  bool _isNameAvailable = true;
 
   Timer? _emailTimer, _nameTimer;
 
-  /* ---------- VALIDATORS ---------- */
-  String? _validateEmail(String? v) {
-    if (v == null || v.trim().isEmpty) return 'Required';
-    const pat = r'^[\w\.\-]+@([\w\-]+\.)+[\w]{2,4}$';
-    if (!RegExp(pat).hasMatch(v.trim())) return 'Invalid email';
-    return _isEmailAvailable ? null : 'Not available';
-  }
-
-  String? _validateName(String? v) {
-    if (v == null || v.trim().isEmpty) return 'Required';
-    if (v.trim().length < 3) return 'Name too short';
-    return _isNameAvailable ? null : 'Not available';
-  }
-
-  String? _validateIban(String? v) {
-    if (v == null || v.isEmpty) return null; // facultatif
-    return RegExp(r'^BE\d{2}(?: \d{4}){3}$').hasMatch(v)
-        ? null
-        : 'Invalid format';
-  }
-
-  String? _validatePassword(String? v) {
-    if (v == null || v.isEmpty) return 'Required';
-    if (v.length < 8) return 'Minimum 8 characters';
-    if (!RegExp(r'[A-Z]').hasMatch(v)) return 'Need A-Z';
-    if (!RegExp(r'[a-z]').hasMatch(v)) return 'Need a-z';
-    if (!RegExp(r'\d').hasMatch(v))   return 'Need 0-9';
-    if (!RegExp(r'[!@#\$%^&*(),.?\":{}|<>]').hasMatch(v)) return 'Need symbol';
-    return null;
-  }
-
-  String? _validateConfirmPwd(String? v) {
-    if (v == null || v.isEmpty) return 'Required';
-    return v == pwdCtrl.text ? null : 'Mismatch';
-  }
-
-  /* ---------- async checks ---------- */
+  // --------- async checks (dispo serveur) ---------
   Future<void> _checkEmail(String email) async {
     final ok = await ref.read(authServiceProvider).checkEmailAvailable(email);
     if (!mounted) return;
@@ -87,13 +50,15 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     });
   }
 
-  /* ---------- submit ---------- */
+  // --------- SUBMIT -----------
   bool get _canSubmit =>
-      _validateEmail(emailCtrl.text) == null &&
-          _validateName(fullNameCtrl.text) == null &&
-          _validateIban(ibanCtrl.text) == null &&
-          _validatePassword(pwdCtrl.text)  == null &&
-          _validateConfirmPwd(confirmPwdCtrl.text) == null;
+      User.validateEmail(emailCtrl.text) == null &&
+          User.validateName(fullNameCtrl.text) == null &&
+          User.validateIban(ibanCtrl.text) == null &&
+          User.validatePassword(pwdCtrl.text) == null &&
+          User.validateConfirmPwd(confirmPwdCtrl.text, pwdCtrl.text) == null &&
+          _isEmailAvailable &&
+          _isNameAvailable;
 
   void _submit() {
     if (!_formKey.currentState!.validate()) return;
@@ -101,12 +66,11 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       emailCtrl.text.trim(),
       fullNameCtrl.text.trim(),
       ibanCtrl.text.trim(),
-      pwdCtrl.text.trim(), 
+      pwdCtrl.text.trim(),
     );
     debugPrint('👉 SUBMIT called email=${emailCtrl.text}');
   }
 
-  /* ---------- UI ---------- */
   @override
   Widget build(BuildContext context) {
     final loading = ref.watch(authUserProvider).isLoading;
@@ -125,7 +89,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                /* Email */
+                // Email
                 TextFormField(
                   key: _emailKey,
                   controller: emailCtrl,
@@ -133,10 +97,14 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                     labelText: 'Email *',
                     border: OutlineInputBorder(),
                   ),
-                  validator: _validateEmail,
+                  validator: (value) {
+                    final error = User.validateEmail(value);
+                    if (error != null) return error;
+                    return _isEmailAvailable ? null : 'Not available';
+                  },
                   onChanged: (val) {
                     _emailKey.currentState?.validate();
-                    setState(() {});                    // refresh button
+                    setState(() {});
                     _emailTimer?.cancel();
                     if (val.trim().isEmpty) return;
                     _emailTimer = Timer(
@@ -147,7 +115,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                /* Full name */
+                // Full name
                 TextFormField(
                   key: _nameKey,
                   controller: fullNameCtrl,
@@ -155,7 +123,11 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                     labelText: 'Full Name *',
                     border: OutlineInputBorder(),
                   ),
-                  validator: _validateName,
+                  validator: (value) {
+                    final error = User.validateName(value);
+                    if (error != null) return error;
+                    return _isNameAvailable ? null : 'Not available';
+                  },
                   onChanged: (val) {
                     _nameKey.currentState?.validate();
                     setState(() {});
@@ -169,7 +141,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                /* IBAN (optional) */
+                // IBAN (optional)
                 TextFormField(
                   key: _ibanKey,
                   controller: ibanCtrl,
@@ -177,7 +149,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                     labelText: 'IBAN',
                     border: OutlineInputBorder(),
                   ),
-                  validator: _validateIban,
+                  validator: User.validateIban,
                   onChanged: (_) {
                     _ibanKey.currentState?.validate();
                     setState(() {});
@@ -185,7 +157,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                /* Password */
+                // Password
                 TextFormField(
                   key: _pwdKey,
                   controller: pwdCtrl,
@@ -194,7 +166,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                     border: OutlineInputBorder(),
                   ),
                   obscureText: true,
-                  validator: _validatePassword,
+                  validator: User.validatePassword,
                   onChanged: (_) {
                     _pwdKey.currentState?.validate();
                     _confKey.currentState?.validate(); // re-valide confirm
@@ -203,7 +175,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                /* Confirm password */
+                // Confirm password
                 TextFormField(
                   key: _confKey,
                   controller: confirmPwdCtrl,
@@ -212,7 +184,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                     border: OutlineInputBorder(),
                   ),
                   obscureText: true,
-                  validator: _validateConfirmPwd,
+                  validator: (v) => User.validateConfirmPwd(v, pwdCtrl.text),
                   onChanged: (_) {
                     _confKey.currentState?.validate();
                     setState(() {});
@@ -230,13 +202,11 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                   )
                       : const Text('Sign up'),
                 ),
-                
               ],
             ),
           ),
         ),
       ),
     );
-    
   }
 }
