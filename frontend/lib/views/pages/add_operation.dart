@@ -114,9 +114,18 @@ class _AddOperationPageState extends ConsumerState<AddOperationPage> {
     } else {
       // Pour un ajout, initialiser l'initiateur avec l'utilisateur courant
       final currentUser = ref.read(authUserProvider).value;
+      final tricount = ref.read(currentTricountProvider).tricount;
       if (currentUser != null) {
         setState(() {
           _selectedInitiator = currentUser.id;
+          
+        });
+      }
+      if(tricount != null) {
+        setState(() {
+          for (var participant in tricount.participants) {
+            _weights[participant.id] = 1;
+          }
         });
       }
     }

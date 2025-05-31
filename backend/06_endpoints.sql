@@ -216,7 +216,6 @@ $$
 $$ language plpgsql security definer;
 grant execute on function check_email_available(text, integer) to anon;
 
---DROP FUNCTION check_full_name_available(text,integer);
 create or replace function check_full_name_available(fullName text, user_id integer default 0)
     returns boolean as
 $$
@@ -742,8 +741,4 @@ $$;
 
 grant execute on function save_tricount to authenticated;
 GRANT EXECUTE ON FUNCTION reset_database() TO anon;
-
-
-select * from tricount;
-
 
