@@ -15,6 +15,7 @@ class tricount_list_service {
         return [];
       }
       final decoded = jsonDecode(res.body);
+      print(decoded);
       
 
       if (decoded == null) {
@@ -25,6 +26,8 @@ class tricount_list_service {
       for (var tricount in decoded) {
         tricounts.add(Tricount.fromJson(tricount));
       }
+      
+      
 
 
       return tricounts;

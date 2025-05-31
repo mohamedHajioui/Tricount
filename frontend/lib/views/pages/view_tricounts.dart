@@ -105,6 +105,7 @@ class TricountListPage extends ConsumerWidget {
       body: tricountsAsync.when(
         
         data: (tricounts) {
+
           if (tricounts == null || tricounts.isEmpty) {
             return Center(child: Text('No tricounts found.'));
           }

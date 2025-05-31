@@ -44,8 +44,8 @@ class users_service{
       return null;
     }
     
-    
-    User user = User.fromJson(decoded_user[0]);
+    print(decoded_user);
+    User user = User.fromJson(decoded_user);
     return user;
   }
 }
