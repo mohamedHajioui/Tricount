@@ -5,6 +5,7 @@ import '../widgets/login_card.dart';
 import '../../providers/auth_service_provider.dart';
 import '../../providers/reset_db_provider.dart';
 import '../../providers/get_current_user.dart';
+import '../../models/user.dart';
 
 
 
@@ -40,33 +41,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 
-  // VALIDATEURS
-  String? _validateEmail(String? v) {
-    if (!_emailDirty) return null;
-    if (v == null || v.trim().isEmpty) return 'Required';
-
-    // Regex simple mais correct pour usage courant
-    final pattern = r'^[\w\.\-]+@([\w\-]+\.)+[\w]{2,4}$';
-    final isValid = RegExp(pattern).hasMatch(v.trim());
-    return isValid ? null : 'Not a valid mail';
-  }
-
-  String? _validatePassword(String? v) {
-    if (!_pwdDirty) return null;
-    if (v == null || v.isEmpty) return 'Required';
-    if (!RegExp(r'[A-Z]').hasMatch(v)) return 'At least one uppercase letter';
-    if (!RegExp(r'[a-z]').hasMatch(v)) return 'At least one lowercase letter';
-    if (!RegExp(r'\d').hasMatch(v)) return 'At least one number';
-    if (!RegExp(r'[!@#\\\$%^&*(),.?\":{}|<>]').hasMatch(v)) {
-      return 'At least one special character';
-    }
-    if (v.length < 8) return 'Minimum 8 characters';
-    return null;
-  }
+  
   //pour desactiver login
   bool _formHasErrors() {
-    return _validateEmail(_emailCtrl.text) != null ||
-        _validatePassword(_pwdCtrl.text) != null;
+    return User.validateEmail(_emailCtrl.text) != null ||
+        User.validatePassword(_pwdCtrl.text) != null;
   }
 
   void _showErrorDialog() {
@@ -147,9 +126,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         border: OutlineInputBorder(),
                       ),
                       keyboardType: TextInputType.emailAddress,
-                      autovalidateMode: AutovalidateMode.always,
+                      autovalidateMode: AutovalidateMode.onUserInteraction,
                       onChanged: (_) => setState(() => _emailDirty = true),
-                      validator: _validateEmail
+                      validator: (value) {
+                      final error = User.validateEmail(value);
+                      if (error != null) return error;
+                      return null;
+                      }
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
@@ -159,9 +142,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         border: OutlineInputBorder(),
                       ),
                       obscureText: true,
-                      autovalidateMode: AutovalidateMode.always,
+                      autovalidateMode: AutovalidateMode.onUserInteraction,
                       onChanged: (_) => setState(() => _pwdDirty = true),
-                      validator: _validatePassword
+                      validator: (value) {
+                        final error = User.validatePassword(value);
+                        if(error != null) return error;
+                        return null;
+                      },
                     ),
                     const SizedBox(height: 24),
                     ElevatedButton(
