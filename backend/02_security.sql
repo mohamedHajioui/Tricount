@@ -134,27 +134,33 @@ create or replace function signup(
     full_name text,
     iban text,
     password text
-) returns auth.jwt_token as
+) returns void as
 $$
-declare
-    v_email text := email;
-    v_full_name text := full_name;
-    v_iban text := iban;
-    v_password text := password;
-    result auth.jwt_token;
+DECLARE
+    v_email     text := email;
+    v_name      text := full_name;
+    v_iban      text := iban;
+    v_password  text := password;
 begin
+    IF EXISTS (SELECT 1 FROM users WHERE users.email = v_email
+                                      OR users.full_name = v_name) THEN
+        RAISE EXCEPTION 'User ''%'' already exists', v_name
+            USING ERRCODE = 'P0001';
+    END IF;
+    if v_password is null
+        or length(v_password) < 8
+        or v_password !~ '[0-9]'
+        or v_password !~ '[A-Z]'
+        or v_password !~ '[a-z]'
+        or v_password !~ '[^A-Za-z0-9]'
+    then
+        raise exception 'Password must be at least 8 characters long and contain at least one digit, one uppercase letter, one lowercase letter and one special character'
+            using errcode = 'P0001';
+    end if;
     
     insert into users(email, password, full_name, iban)
-    values(v_email, v_password, v_full_name, v_iban);
+    values(v_email, v_password, v_name, v_iban);
 
-    select auth.sign(row_to_json(r), '94VEF6BGSV4MHACYQYWYZZXILQR7412Z') as token
-    into result
-    from (
-             select 'basic_user' as role,
-                    v_email as sub,
-                    extract(epoch from now())::int + 86400 as exp
-         ) r;
-    return result;
 end;
 $$ language plpgsql security definer;
 

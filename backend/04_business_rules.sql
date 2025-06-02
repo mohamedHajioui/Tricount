@@ -1,15 +1,24 @@
 alter table users
     add constraint unique_email unique (email);
 
+ALTER TABLE users
+    ADD CONSTRAINT user_email_format
+        CHECK (
+            email ~ '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'
+            );
+
+
 alter table users
     add constraint check_full_name_length check (length(users.full_name) >= 3);
 
-alter table users
-    add constraint chk_iban_format
-        check (
-            iban is null or
-            replace(iban, ' ', '') ~ '^BE[0-9]{14}$'
+
+ALTER TABLE users
+    ADD CONSTRAINT user_iban_format
+        CHECK (
+            iban IS NULL
+                OR iban ~ '^BE[0-9]{2}( [0-9]{4}){3}$'
             );
+
 
 
 

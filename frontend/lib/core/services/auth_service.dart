@@ -48,6 +48,7 @@ class AuthService {  // Ajoute la classe !
 
   Future<User> signup(String email, String fullName, String iban, String password) async {
     final ibanValue = iban.isEmpty ? null : iban;
+    //appel a l'endpoint signup
     final res = await ApiClient.post(
       'signup',
       anonymous: true,
@@ -60,27 +61,10 @@ class AuthService {  // Ajoute la classe !
     );
     debugPrint('HTTP ${res.statusCode}  ${res.body}');
 
-    if (res.statusCode != 200) {
-      throw Exception(jsonDecode(res.body)['message']);
+    if (res.statusCode != 204) {
+      throw Exception(res.body.isEmpty ? 'Signup failed' : jsonDecode(res.body)['message']);
     }
-
-    // On récupère le token du backend
-    final row = jsonDecode(res.body) as Map<String, dynamic>;
-    final token = row['token'] as String;
-    Params.setValue('token', token);
-
-    debugPrint('signup token = $token');
-    debugPrint('BODY = ${res.body}');
-
-    // On fait un nouvel appel API pour obtenir les infos de l'utilisateur courant
-    final userRes = await ApiClient.post(
-      'get_user_data',
-      anonymous: false, // Ce flag indique que le token est utilisé dans les headers
-    );
-
-    final userData = jsonDecode(userRes.body) as Map<String, dynamic>;
-    return User.fromJson(userData);
-
+    return login(email, password);
   }
 
 
