@@ -19,6 +19,7 @@ class TricountListPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tricountsAsync = ref.watch(tricountnotifyer);
+    
     final current_user = ref.read(authUserProvider).value;
     
     final reset = ref.watch(resetDbControllerProvider);

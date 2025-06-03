@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../../providers/auth_service_provider.dart';
 import '../../models/user.dart';
+import 'package:prbd_2425_a07/providers/tricount_list_provider.dart';
+
 
 class SignupScreen extends ConsumerStatefulWidget {
   static const routeName = '/signup';
@@ -68,7 +70,14 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       ibanCtrl.text.trim(),
       pwdCtrl.text.trim(),
     );
+    
     debugPrint('👉 SUBMIT called email=${emailCtrl.text}');
+  }
+  
+  void _refresh(){
+    final tricountListNotifier = ref.read(tricountnotifyer.notifier);
+    tricountListNotifier.refreshTriCountList();
+
   }
 
   @override

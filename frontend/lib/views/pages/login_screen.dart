@@ -177,7 +177,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 onLogin: (email) async {
                   await ref.read(authUserProvider.notifier).login(email, 'Password1,');
                   await ref.refresh(logged_usernotifyer.future);
-                  await ref.refresh(tricountnotifyer.future);
                   
                   
                   final user = ref.read(authUserProvider).value;
