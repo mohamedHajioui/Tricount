@@ -185,7 +185,7 @@ END;
 $$ LANGUAGE plpgsql security definer;
 
 CREATE constraint TRIGGER check_repartition_participants_trigger
-    after insert
+    after insert or update
     on depense
     deferrable initially deferred
     for each row
