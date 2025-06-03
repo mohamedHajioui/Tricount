@@ -58,34 +58,6 @@ begin
         from tricount
         where tricount.id = save_tricount.id;
 
-        -- VÉRIFICATION : Le créateur doit rester dans les participants
-        if not (tricount_creator_id = any(final_participants)) then
-            raise exception 'You cannot remove the participation of the owner of a tricount';
-        end if;
-
-        -- Obtenir le premier participant problématique
-        select old_participant into participant_to_remove
-        from tricount t
-                 cross join unnest(t.participant) as old_participant
-        where t.id = save_tricount.id
-          and not (old_participant = any(final_participants))
-          and exists (
-            select 1 from depense d
-            where d.tricount_id = t.id
-              and (
-                d.initiator = old_participant
-                    or exists (
-                    select 1 from jsonb_array_elements(d.repartition) as rep
-                    where (rep->>'user')::integer = old_participant
-                )
-                )
-        )
-        limit 1; --s'arrete au premier user qu'on peut pas supprimer 
-
-        if participant_to_remove is not null then
-            raise exception 'Cannot remove participant % who is involved in operations', participant_to_remove;
-        end if;
-
         -- Mettre à jour le tricount
         update tricount
         set title = save_tricount.title,
@@ -114,17 +86,19 @@ begin
                        'created_at', t.date_hour,
                        'creator', t.creator,
                        'participants', (
-                           select json_agg(
-                                          json_build_object(
-                                                  'id', u.id,
-                                                  'email', u.email,
-                                                  'full_name', u.full_name,
-                                                  'iban', u.iban,
-                                                  'role', u.role
-                                          )
-                                  )
-                           from users u
-                           where u.id = any(t.participant)
+                           select json_agg(participant_ordonne)
+                           from (
+                                    select json_build_object(
+                                                   'id', u.id,
+                                                   'email', u.email,
+                                                   'full_name', u.full_name,
+                                                   'iban', u.iban,
+                                                   'role', u.role
+                                           ) as participant_ordonne
+                                    from users u
+                                    where u.id = any(t.participant)
+                                    order by u.full_name
+                                ) as ordered_participants
                        ),
                        'operations', (
                            select coalesce(
@@ -304,7 +278,7 @@ begin
         raise exception 'Permission refusée';
     end if;
 
-    -- Tente de supprimer (le trigger vérifiera les règles métier)
+    -- Tente de supprimer
     delete from tricount where id = tricount_id;
 end;
 $$ language plpgsql security definer;
@@ -359,11 +333,6 @@ begin
 
 
     if depense_id = 0 then
-        -- Ajouter l'initiateur à la liste des participants s'il n'y est pas déjà
-        if not (initiator = any(participant_ids)) then
-            participant_ids := array_append(participant_ids, initiator);
-        end if;
-
         -- Ajouter les participants à la table participation
         insert into participation(user_id, tricount_id)
         select unnest(participant_ids), save_operation.tricount_id
@@ -411,11 +380,7 @@ begin
         if not exists (select 1 from depense where depense.id = depense_id) then
             raise exception 'Operation not found';
         end if;
-        -- Ajouter l'initiateur à la liste des participants s'il n'y est pas déjà
-        if not (initiator = any(participant_ids)) then
-            participant_ids := array_append(participant_ids, initiator);
-        end if;
-
+       
         -- Récupérer le tricount_id associé à cette dépense
         select d.tricount_id into current_tricount_id
         from depense d
@@ -580,7 +545,9 @@ begin
                 FROM participation p
                          LEFT JOIN paid_amounts paid ON paid.user_id = p.user_id
                          LEFT JOIN due_amounts due ON due.user_id = p.user_id
+                        left join users on p.user_id = users.id
                 WHERE p.tricount_id = get_tricount_balance.tricount_id
+                order by p.user_id
             )
         SELECT
             base_results.user_id,
@@ -588,7 +555,8 @@ begin
             trim(trailing '0' from trim(trailing '.' from base_results.paid::text))::numeric as paid,
             trim(trailing '0' from trim(trailing '.' from base_results.due::text))::numeric as due,
             trim(trailing '0' from trim(trailing '.' from base_results.balance::text))::numeric as balance
-        FROM base_results;
+        FROM base_results
+        ORDER BY base_results.user_id;
 
 end;
 $$ language plpgsql security definer;
@@ -644,7 +612,7 @@ begin
                                           from users u
                                                    join participation p on u.id = p.user_id
                                           where p.tricount_id = t.id
-                                          order by u.id
+                                          order by u.full_name
                                       ) user_details
                              ) as participants,
                              (
