@@ -1,7 +1,10 @@
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter/material.dart';
 import 'package:prbd_2425_a07/core/services/balance_service.dart';
+import 'package:prbd_2425_a07/core/services/deletetricount_service.dart';
+import 'package:prbd_2425_a07/providers/tricount_list_provider.dart';
 import 'package:prbd_2425_a07/providers/current_tricount_provider.dart';
+import 'package:prbd_2425_a07/providers/delete_tricount_provider.dart';
 import 'package:prbd_2425_a07/views/pages/add_operation.dart';
 import 'package:prbd_2425_a07/views/pages/add_tricount.dart';
 import 'package:prbd_2425_a07/views/pages/view_balance.dart';
@@ -173,13 +176,19 @@ class _TricountViewState extends ConsumerState<TricountView> {
                       ),
                       TextButton(
                         child: const Text('Supprimer', style: TextStyle(color: Colors.red)),
-                        onPressed: () {
-                          // TODO: Implémenter la suppression du tricount
-                          Navigator.of(context).pop(); // Fermer la boîte de dialogue
-                          Navigator.of(context).pop(); // Retourner à la liste des tricounts
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Tricount supprimé')),
-                          );
+                        onPressed: () async {
+                          final notifier = ref.read(deletetricountnotifyer.notifier);
+
+                          await notifier.delete(tricount.id);
+                          ref.refresh(tricountnotifyer);
+                          if (context.mounted) {
+                            Navigator.of(context).pop(); // Close the dialog
+                            Navigator.of(context).pop(); // Go back to list page
+
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Tricount supprimé')),
+                            );
+                          }
                         },
                       ),
                     ],

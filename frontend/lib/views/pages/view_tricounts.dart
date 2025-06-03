@@ -97,22 +97,17 @@ class TricountListPage extends ConsumerWidget {
                 );
               },
             ),
-            
+
             ListTile(
-              
               leading: Icon(Icons.recycling),
               title: Text('Reset Database'),
-              onTap: loadingReset
-                  ? null
-                  : () => ref.read(resetDbControllerProvider.notifier).reset(context),
-              trailing: loadingReset
-                  ? SizedBox(
-                height: 20,
-                width: 20,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-                  : null,
+              onTap: () async {
+                ref.read(resetDbControllerProvider.notifier).reset(context);
+                ref.read(authUserProvider.notifier).logout();
+                Navigator.pushReplacementNamed(context, '/login');
+              },
             ),
+
             ListTile(
               leading: Icon(Icons.logout),
               title: Text('Logout'),
