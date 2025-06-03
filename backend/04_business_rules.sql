@@ -164,6 +164,14 @@ BEGIN
     IF jsonb_array_length(NEW.repartition) = 0 THEN
         RAISE EXCEPTION 'An operation must have at least one repartition';
     END IF;
+    IF EXISTS (
+        SELECT 1
+        FROM jsonb_array_elements(NEW.repartition) AS element
+        GROUP BY element->>'user'
+        HAVING COUNT(*) > 1
+    ) THEN
+        RAISE EXCEPTION 'Duplicate user in repartition';
+    END IF;
     -- Pour chaque utilisateur dans la répartition
     FOR v_user_id IN (
         SELECT (jsonb_array_elements(NEW.repartition)->>'user')::integer
@@ -179,6 +187,13 @@ BEGIN
                 RAISE EXCEPTION 'L''utilisateur % n''est pas participant du tricount', v_user_id;
             END IF;
         END LOOP;
+    IF NOT EXISTS (
+        SELECT 1 FROM participation
+        WHERE user_id = NEW.initiator
+          AND tricount_id = NEW.tricount_id
+    ) THEN
+        RAISE EXCEPTION 'L''initiateur (user_id=%) doit être participant du tricount', NEW.initiator;
+    END IF;
 
     RETURN NEW;
 END;
@@ -186,8 +201,32 @@ $$ LANGUAGE plpgsql security definer;
 
 CREATE constraint TRIGGER check_repartition_participants_trigger
     after insert or update
-    on depense
+    on depense 
     deferrable initially deferred
     for each row
 EXECUTE FUNCTION check_repartition_participants();
+
+
+create or replace function check_repartition_weight()
+returns trigger as $$
+    begin
+        IF EXISTS (
+            SELECT 1
+            FROM jsonb_array_elements(new.repartition) AS elem
+            WHERE (elem->>'weight')::numeric <= 0
+        ) THEN
+            RAISE EXCEPTION 'All weights must be positive (> 0)';
+        END IF;
+        return new;
+    end;
+    
+    $$ language plpgsql security definer ;
+
+create trigger check_repartition_weight_trigger
+    BEFORE INSERT OR UPDATE  
+    ON depense
+    FOR EACH ROW
+EXECUTE FUNCTION check_repartition_weight();
+
+
 
