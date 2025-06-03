@@ -48,6 +48,15 @@ class _AddTricountPageState extends ConsumerState<AddTricountPage> {
     
     return tricount;
   }
+  
+  void refresh_elements(){
+    final tricountListNotifier = ref.read(tricountnotifyer.notifier);
+    final tricount_state = ref.read(currentTricountProvider);
+
+
+    tricountListNotifier.refreshTriCountList();
+    tricount_state.refresh();
+  }
 
 
 
@@ -149,11 +158,11 @@ class _AddTricountPageState extends ConsumerState<AddTricountPage> {
                     c_tricount.participants = addedUsers;
 
                     final notifier = ref.read(saveTricountNotifierProvider.notifier);
-                    final tricountListNotifier = ref.read(tricountnotifyer.notifier);
 
                     try {
                       await notifier.save(c_tricount);
-                      await tricountListNotifier.refreshTriCountList();
+                      refresh_elements();
+                      
                       if (mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text('Tricount saved successfully')),
