@@ -19,6 +19,7 @@ class TricountListPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tricountsAsync = ref.watch(tricountnotifyer);
+    final current_user = ref.read(authUserProvider).value;
     
     final reset = ref.watch(resetDbControllerProvider);
     final bool loadingReset = reset.isLoading;
@@ -57,7 +58,27 @@ class TricountListPage extends ConsumerWidget {
           children: [
             DrawerHeader(
               decoration: BoxDecoration(color: Colors.blue),
-              child: Text('Menu', style: TextStyle(color: Colors.white, fontSize: 24)),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Menu',
+                    style: TextStyle(color: Colors.white, fontSize: 24),
+                  ),
+                  const SizedBox(height: 10),
+                  if (current_user != null) ...[
+                    Text(
+                      current_user.fullName,
+                      style: TextStyle(color: Colors.white, fontSize: 16),
+                    ),
+                    Text(
+                      current_user.email,
+                      style: TextStyle(color: Colors.white70, fontSize: 14),
+                    ),
+                  ],
+                ],
+              ),
             ),
 
             // ✅ Dark Mode Toggle
