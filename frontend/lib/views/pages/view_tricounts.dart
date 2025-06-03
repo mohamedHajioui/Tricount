@@ -45,8 +45,7 @@ class TricountListPage extends ConsumerWidget {
           ),
           IconButton(
             onPressed: () {
-              final tricountListNotifier = ref.read(tricountnotifyer.notifier);
-              tricountListNotifier.refreshTriCountList();
+              ref.refresh(tricountnotifyer);
             }, // - button
             icon: Icon(Icons.refresh),
           ),
