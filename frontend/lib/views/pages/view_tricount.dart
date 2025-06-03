@@ -126,6 +126,7 @@ class _TricountViewState extends ConsumerState<TricountView> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
+            tricountState.resetTricount();
             Navigator.of(context).pop(); // Retour à l'écran précédent
           },
         ),

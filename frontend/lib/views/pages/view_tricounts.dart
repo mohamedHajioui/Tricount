@@ -9,6 +9,8 @@ import 'package:prbd_2425_a07/providers/theme_provider.dart';
 import 'package:prbd_2425_a07/providers/reset_db_provider.dart';
 
 import 'package:prbd_2425_a07/core/services/auth_service.dart';
+import '../widgets/no_tricount_view.dart';
+
 
 class TricountListPage extends ConsumerWidget {
   static const routeName = '/tricounts';
@@ -41,6 +43,8 @@ class TricountListPage extends ConsumerWidget {
           ),
           IconButton(
             onPressed: () {
+              final tricountListNotifier = ref.read(tricountnotifyer.notifier);
+              tricountListNotifier.refreshTriCountList();
             }, // - button
             icon: Icon(Icons.refresh),
           ),
@@ -107,7 +111,7 @@ class TricountListPage extends ConsumerWidget {
         data: (tricounts) {
 
           if (tricounts == null || tricounts.isEmpty) {
-            return Center(child: Text('No tricounts found.'));
+            return const NoTricountsView();;
           }
 
           return ListView(

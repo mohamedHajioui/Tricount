@@ -208,9 +208,16 @@ class CurrentTricountNotifier extends ChangeNotifier {
   double _calculateTotalExpenses() {
     if (_tricount == null) return 0.0;
     return _tricount!.depenses.fold(0, (sum, dep) => sum + dep.amount);
-    /*return 0.0;*/
+  }
+
+  void resetTricount() {
+    _tricount = null;
+    _isLoading = false;
+    _error = null;
+    notifyListeners();
   }
 }
+
 
 // Création du provider
 final currentTricountProvider = ChangeNotifierProvider<CurrentTricountNotifier>((ref) {

@@ -10,6 +10,7 @@ import 'package:prbd_2425_a07/providers/auth_service_provider.dart';
 import 'package:prbd_2425_a07/providers/current_tricount_provider.dart';
 import 'package:prbd_2425_a07/providers/get_current_user.dart';
 import 'package:prbd_2425_a07/providers/savetricount_provider.dart';
+import 'package:prbd_2425_a07/providers/tricount_list_provider.dart';
 import 'package:prbd_2425_a07/providers/users_provider.dart';
 
 class AddTricountPage extends ConsumerStatefulWidget {
@@ -32,11 +33,18 @@ class _AddTricountPageState extends ConsumerState<AddTricountPage> {
   
   
   Tricount tricount(){
+    final int tricountId = widget.tricountId;
+    debugPrint("input : $tricountId");
     final current_user = ref.read(authUserProvider).value;
     final tricount_state = ref.read(currentTricountProvider);
-    tricount_state.refresh();
+    
+    Tricount tricount = new Tricount(id: 0, title: "", dateHour: null, creator: current_user!.id, participants: [], depenses: []);
+    
+    if(tricountId != 0) {
+      
+      tricount = tricount_state.tricount??new Tricount(id: 0, title: "", dateHour: null, creator: current_user!.id, participants: [], depenses: []);
+    }
 
-    Tricount tricount = tricount_state.tricount??new Tricount(id: 0, title: "", dateHour: null, creator: current_user!.id, participants: [], depenses: []);
     
     return tricount;
   }
@@ -47,13 +55,16 @@ class _AddTricountPageState extends ConsumerState<AddTricountPage> {
   @override
   void initState() {
     super.initState();
+    
 
     titleController.addListener(validateInputs);
     descController.addListener(validateInputs);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final tricount_state = ref.read(currentTricountProvider);
-      final c_tricount = tricount_state.tricount;
+      final c_tricount = tricount();
+
+      
 
       if (c_tricount != null) {
         titleController.text = c_tricount.title;
@@ -64,11 +75,16 @@ class _AddTricountPageState extends ConsumerState<AddTricountPage> {
       }
 
       final loggedUser = ref.read(logged_usernotifyer).asData?.value;
-      if (loggedUser != null && !addedUsers.contains(loggedUser)) {
-        setState(() {
-          addedUsers.add(loggedUser);
-        });
+      debugPrint("lslsl ${c_tricount!.id}");
+      if(c_tricount!.id == 0) {
+        debugPrint("lslsllslslsllsls");
+        if (loggedUser != null && !addedUsers.contains(loggedUser)) {
+          setState(() {
+            addedUsers.add(loggedUser);
+          });
+        }
       }
+      
     });
   }
 
@@ -93,6 +109,7 @@ class _AddTricountPageState extends ConsumerState<AddTricountPage> {
 
   @override
   Widget build(BuildContext context) {
+    
     
     final c_tricount = tricount();
 
@@ -132,9 +149,11 @@ class _AddTricountPageState extends ConsumerState<AddTricountPage> {
                     c_tricount.participants = addedUsers;
 
                     final notifier = ref.read(saveTricountNotifierProvider.notifier);
+                    final tricountListNotifier = ref.read(tricountnotifyer.notifier);
 
                     try {
                       await notifier.save(c_tricount);
+                      await tricountListNotifier.refreshTriCountList();
                       if (mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text('Tricount saved successfully')),
@@ -166,7 +185,7 @@ class _AddTricountPageState extends ConsumerState<AddTricountPage> {
                     TextFormField(
                       controller: titleController,
                       decoration: const InputDecoration(
-                        labelText: 'bonjour',
+                        labelText: 'Title',
                         border: OutlineInputBorder(),
                       ),
                     ),

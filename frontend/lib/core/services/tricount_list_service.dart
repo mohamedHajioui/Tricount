@@ -15,7 +15,7 @@ class tricount_list_service {
         return [];
       }
       final decoded = jsonDecode(res.body);
-      print(decoded);
+      
       
 
       if (decoded == null) {
