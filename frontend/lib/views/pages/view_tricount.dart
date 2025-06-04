@@ -247,11 +247,8 @@ class _TricountViewState extends ConsumerState<TricountView> {
             ),
           ),
           Expanded(
-            child: tricount.participants.length == 1
-                ? const NoFriendsView()
-                : tricount.depenses.isEmpty
-                ? _buildEmptyState()
-                : RefreshIndicator(
+            child: tricount.depenses.isNotEmpty
+                ? RefreshIndicator(
               onRefresh: () async {
                 await ref.read(currentTricountProvider.notifier).refresh();
               },
@@ -263,8 +260,12 @@ class _TricountViewState extends ConsumerState<TricountView> {
                   );
                 },
               ),
-            ),
+            )
+                : tricount.participants.length == 1
+                ? const NoFriendsView()
+                : _buildEmptyState(),
           )
+
           ,
           TricountTotalBar(),
         ],
