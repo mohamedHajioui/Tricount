@@ -1,53 +1,46 @@
 @startuml
+hide circle
+skinparam classAttributeIconSize 0
 
-entity users {
-  * id : serial <<PK>>
-  --
-  email : varchar(256)
-  password : varchar(512)
-  full_name : varchar(256)
-  iban : varchar(256)
-  role : role_type
+entity "users" as users {
+    id : serial
+    email : varchar(256)
+    password : varchar(512)
+    full_name : varchar(256)
+    iban : varchar(256)
+    role : role_type
 }
 
-entity tricount {
-  * id : serial <<PK>>
-  --
-  title : varchar(256)
-  description : varchar(512)
-  creator : int <<FK>>
-  participant : integer[]
-  date_hour : timestamp
+entity "tricount" as tricount {
+    id : serial
+    title : varchar(256)
+    description : varchar(512)
+    creator : int
+    participant : integer[]
+    date_hour : timestamp
 }
 
-entity depense {
-  * id : serial <<PK>>
-  --
-  tricount_id : int <<FK>>
-  title : varchar(256)
-  amount : double
-  operation_date : timestamp
-  created_at : timestamp
-  initiator : int
-  repartition : jsonb
+entity "depense" as depense {
+    id : serial
+    tricount_id : int
+    title : varchar(256)
+    amount : double
+    operation_date : timestamp
+    created_at : timestamp
+    initiator : int
+    repartition : jsonb
 }
 
-entity participation {
-  * user_id : int <<PK,FK>>
-  * tricount_id : int <<PK,FK>>
+entity "participation" as participation {
+    user_id : int
+    tricount_id : int
 }
 
-' ----- Associations -----
-users ||--o{ tricount : creates
-users ||--o{ participation : participates
-users ||--o{ depense : initiates
 
-tricount ||--o{ depense : contains
-tricount ||--o{ participation : has
-tricount }o--o{ users : participants (array in tricount, but association in participation)
-depense }o--|| tricount : belongs to
-
-participation }o--|| users : "user"
-participation }o--|| tricount : "tricount"
+users ||--o{ tricount : "crée >"
+tricount ||--o{ depense : "contient >"
+tricount ||--o{ participation : "associe >"
+users ||--o{ participation : "participe à >"
+depense }|..|| users : "initiée par >"
 
 @enduml
