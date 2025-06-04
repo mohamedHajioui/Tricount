@@ -1,0 +1,46 @@
+@startuml
+hide circle
+skinparam classAttributeIconSize 0
+
+entity "users" as users {
+    id : serial
+    email : varchar(256)
+    password : varchar(512)
+    full_name : varchar(256)
+    iban : varchar(256)
+    role : role_type
+}
+
+entity "tricount" as tricount {
+    id : serial
+    title : varchar(256)
+    description : varchar(512)
+    creator : int
+    participant : integer[]
+    date_hour : timestamp
+}
+
+entity "depense" as depense {
+    id : serial
+    tricount_id : int
+    title : varchar(256)
+    amount : double
+    operation_date : timestamp
+    created_at : timestamp
+    initiator : int
+    repartition : jsonb
+}
+
+entity "participation" as participation {
+    user_id : int
+    tricount_id : int
+}
+
+
+users ||--o{ tricount : "crée >"
+tricount ||--o{ depense : "contient >"
+tricount ||--o{ participation : "associe >"
+users ||--o{ participation : "participe à >"
+depense }|..|| users : "initiée par >"
+
+@enduml

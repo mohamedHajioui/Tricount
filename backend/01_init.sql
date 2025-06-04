@@ -200,6 +200,7 @@ from (select convert_from(auth.url_decode(r[1]), 'utf8')::json                  
       from regexp_split_to_array(token, '\.') r) jwt
 $$ immutable;
 
+
 /**************************************************************/
 /*                                                            */
 /* HELLO WORLD                                                */

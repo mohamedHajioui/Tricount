@@ -49,20 +49,30 @@ select setval('users_id_seq', (select max(id)
 
 create or replace function auth.encrypt_pass() returns trigger as
 $$
+declare
+    hash text;
 begin
-    if tg_op = 'INSERT' or new.password <> old.password then
-        new.password = auth.crypt(new.password, auth.gen_salt('bf'));
+    -- si c'est un INSERT ou si le mot de passe a changé et 
+    -- qu'il n'est pas déjà crypté
+    if tg_op = 'INSERT' or new.password != old.password and
+                           not (new.password ~ '^\$2[aby]\$\d{2}\$[./A-Za-z0-9]{53}$') then
+        -- on crypte le mot de passe
+        hash = auth.crypt(new.password, auth.gen_salt('bf'));
+        update users set password = hash where users.id = new.id;
     end if;
-    return new;
+    return null;
 end
 $$ language plpgsql;
 
 drop trigger if exists encrypt_pass on users;
 create trigger encrypt_pass
-    before insert or update
+    -- on choisit un trigger AFTER pour permettre aux contraintes de check
+    -- de s'exécuter avant le cryptage
+    after insert or update
     on users
     for each row
 execute procedure auth.encrypt_pass();
+
 
 -- met à jour les mots de passe pour forcer le hashage
 -- noinspection SqlWithoutWhere
@@ -78,6 +88,7 @@ create or replace function
 $$
 declare
     role   name;
+    user_id integer;
     result auth.jwt_token;
 begin
     -- check email and password
@@ -88,13 +99,13 @@ begin
         raise invalid_password using message = 'invalid user or password';
     end if;
 
-    select users.role from users where users.email = login.email into role;
-
+    select users.role, users.id from users where users.email = login.email into role, user_id;
     select auth.sign(row_to_json(r), '94VEF6BGSV4MHACYQYWYZZXILQR7412Z') as token
     from (select role                                              as role,
                  email                                             as sub,
+                 user_id                                           as user_id,
                  -- valid for 24 hours
-                 extract(epoch from now())::integer + 24 * 60 * 60 as exp) r
+              extract(epoch from now())::integer + 24 * 60 * 60 as exp) r
     into result;
     return result;
 end;
@@ -118,8 +129,44 @@ grant execute on function is_email_available to anon;
 /**************************************************************
  Fonction signup
  **************************************************************/
+create or replace function signup(
+    email text,
+    full_name text,
+    iban text,
+    password text
+) returns void as
+$$
+DECLARE
+    v_email     text := email;
+    v_name      text := full_name;
+    v_iban      text := iban;
+    v_password  text := password;
+begin
+    IF EXISTS (SELECT 1 FROM users WHERE users.email = v_email
+                                      OR users.full_name = v_name) THEN
+        RAISE EXCEPTION 'User ''%'' already exists', v_name
+            USING ERRCODE = 'P0001';
+    END IF;
+    if v_password is null
+        or length(v_password) < 8
+        or v_password !~ '[0-9]'
+        or v_password !~ '[A-Z]'
+        or v_password !~ '[a-z]'
+        or v_password !~ '[^A-Za-z0-9]'
+    then
+        raise exception 'Password must be at least 8 characters long and contain at least one digit, one uppercase letter, one lowercase letter and one special character'
+            using errcode = 'P0001';
+    end if;
+    
+    insert into users(email, password, full_name, iban)
+    values(v_email, v_password, v_name, v_iban);
 
---TODO: à implémenter
+end;
+$$ language plpgsql security definer;
+
+grant execute on function signup to anon;
+
+
 
 /**************************************************************
  Fonctions utilitaires vàv de la sécurité
@@ -134,6 +181,19 @@ create or replace function auth.email()
 $$
 begin
     return current_setting('request.jwt.claims', true)::json ->> 'sub';
+end;
+$$ language plpgsql;
+
+
+/*
+ Retourne l'id de l'utilisateur connecté via JWT
+ */
+
+create or replace function auth.id()
+    returns int as
+$$
+begin
+    return current_setting('request.jwt.claims', true)::json ->> 'user_id';
 end;
 $$ language plpgsql;
 
@@ -188,6 +248,9 @@ begin
     end if;
 end
 $$ language plpgsql;
+
+select *
+from users;
 
 /*
  Lors des tests, permet de simuler une connexion anonyme
