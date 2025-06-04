@@ -1,8 +1,12 @@
 // lib/models/tricount.dart
 import 'dart:convert';
+import 'dart:io';
 
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:prbd_2425_a07/core/services/api_client.dart';
 import 'package:prbd_2425_a07/models/depense.dart';
+import 'package:prbd_2425_a07/providers/tricount_list_provider.dart';
+
 import 'package:prbd_2425_a07/models/repartition.dart';
 import 'package:prbd_2425_a07/models/user.dart';
 
@@ -61,6 +65,46 @@ class Tricount {
     });
     
     return unremovable;
+  }
+
+  static Future<bool> isTitleUnique(String title, int? currentId, WidgetRef ref) async {
+    final tricounts = ref.read(tricountnotifyer).value;
+    if (tricounts == null) return true;
+
+    return !tricounts.any((t) =>
+    t.title.toLowerCase() == title.toLowerCase() && t.id != currentId);
+  }
+
+  static Future<Map<String, String?>> validateInputs(
+      String title,
+      String description,
+      int currentid,
+      WidgetRef ref
+      ) async {
+    
+    
+    //les message d'errure qu'on va retourner
+    String? newTitleError;
+    String? newDescError;
+
+
+    if (title.length < 3) {
+      newTitleError = 'Title must be at least 3 characters';
+    } else {
+      final unique = await Tricount.isTitleUnique(title, currentid, ref);
+      if (!unique) {
+        newTitleError = 'The title is already taken';
+      }
+    }
+
+    if (description.trim().isNotEmpty && description.trim().length < 3) {
+      newDescError = 'Description must be empty or at least 3 characters';
+    }
+
+    return{
+      'title':newTitleError,
+      'description': newDescError,
+    };
   }
 
 

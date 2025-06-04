@@ -104,17 +104,20 @@ class _AddTricountPageState extends ConsumerState<AddTricountPage> {
     super.dispose();
   }
 
-  void validateInputs() {
-    setState(() {
-      final title = titleController.text.trim();
-      final desc = descController.text.trim();
+  Future<void> validateInputs() async {
+    // on recupere les donnes importantes
+    final title = titleController.text.trim();
+    final desc = descController.text.trim();
+    final currentid = tricount().id;
+    
+    final errors = await Tricount.validateInputs(title, desc, currentid, ref);
 
-      titleError = title.length < 3 ? 'Title must be at least 3 characters' : null;
-      descError = (desc.isNotEmpty && desc.length < 3)
-          ? 'Description must be empty or at least 3 characters'
-          : null;
+    setState(() {
+      titleError = errors['title'];
+      descError = errors['description'];
     });
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -153,7 +156,7 @@ class _AddTricountPageState extends ConsumerState<AddTricountPage> {
               IconButton(
                 icon: const Icon(Icons.save, color: Colors.white),
                 onPressed: () async {
-                  validateInputs();
+                  await validateInputs();
                   if (titleError == null && descError == null) {
                     debugPrint('tricountid : ${c_tricount.id}');
                     c_tricount.title = titleController.text.trim();
