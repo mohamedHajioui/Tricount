@@ -132,6 +132,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         title: const Text('Login'),
         backgroundColor: Colors.blue,
         foregroundColor: Colors.white,
+        automaticallyImplyLeading: false,
       ),
       body: Center(
         child: SingleChildScrollView(
