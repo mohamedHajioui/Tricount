@@ -121,8 +121,7 @@ class _AddTricountPageState extends ConsumerState<AddTricountPage> {
     
     
     final c_tricount = tricount();
-
-    
+    final isEditing = widget.tricountId != 0;
     final unremovable = c_tricount.unremovable_list_const();
     
 
@@ -142,13 +141,17 @@ class _AddTricountPageState extends ConsumerState<AddTricountPage> {
           appBar: AppBar(
             backgroundColor: Colors.blue,
             leading: IconButton(
-              icon: const Icon(Icons.arrow_back),
+              icon: const Icon(Icons.arrow_back, color: Colors.white),
               onPressed: () => Navigator.pop(context),
             ),
-            title: const Text("Add Tricount"),
+            title: Text(isEditing ? "Edit Tricount" : "Add Tricount",
+                style: TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+            )),
             actions: [
               IconButton(
-                icon: const Icon(Icons.save),
+                icon: const Icon(Icons.save, color: Colors.white),
                 onPressed: () async {
                   validateInputs();
                   if (titleError == null && descError == null) {

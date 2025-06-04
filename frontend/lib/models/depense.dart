@@ -138,18 +138,23 @@ class Depense {
     if (date == null) {
       return 'required';
     }
-    
+
     if (date.isAfter(DateTime.now())) {
       return 'date may not be in the future';
     }
 
-    // Vérifier si la date est avant la création du tricount
-    if (tricountCreationDate != null && date.isBefore(tricountCreationDate)) {
-      return 'date may not be before the tricount date';
+    if (tricountCreationDate != null) {
+      final opDate = DateTime(date.year, date.month, date.day);
+      final tricountDate = DateTime(tricountCreationDate.year, tricountCreationDate.month, tricountCreationDate.day);
+
+      if (opDate.isBefore(tricountDate)) {
+        return 'may not be before the tricount creation date';
+      }
     }
 
     return null;
   }
+
   // Validation des répartitions
   static String? validateRepartitions(Map<int, int> weights) {
     if (weights.values.every((weight) => weight <= 0)) {

@@ -8,6 +8,7 @@ import 'package:prbd_2425_a07/providers/delete_tricount_provider.dart';
 import 'package:prbd_2425_a07/views/pages/add_operation.dart';
 import 'package:prbd_2425_a07/views/pages/add_tricount.dart';
 import 'package:prbd_2425_a07/views/pages/view_balance.dart';
+import 'package:prbd_2425_a07/views/widgets/no_friends_view.dart';
 import 'package:prbd_2425_a07/views/widgets/operation_card.dart';
 import 'package:prbd_2425_a07/views/widgets/tricount_total_bar.dart';
 
@@ -246,11 +247,12 @@ class _TricountViewState extends ConsumerState<TricountView> {
             ),
           ),
           Expanded(
-            child: tricount.depenses.isEmpty 
-                ? _buildEmptyState() // Utiliser notre état vide
+            child: tricount.participants.length == 1
+                ? const NoFriendsView()
+                : tricount.depenses.isEmpty
+                ? _buildEmptyState()
                 : RefreshIndicator(
               onRefresh: () async {
-                // Rafraîchir les données quand on tire vers le bas
                 await ref.read(currentTricountProvider.notifier).refresh();
               },
               child: ListView.builder(
@@ -262,7 +264,8 @@ class _TricountViewState extends ConsumerState<TricountView> {
                 },
               ),
             ),
-          ),
+          )
+          ,
           TricountTotalBar(),
         ],
       ),
