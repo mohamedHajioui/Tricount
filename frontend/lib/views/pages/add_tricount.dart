@@ -125,8 +125,8 @@ class _AddTricountPageState extends ConsumerState<AddTricountPage> {
     
     final c_tricount = tricount();
     final isEditing = widget.tricountId != 0;
-    final unremovable = c_tricount.unremovable_list_const();
-    
+    final loggedUser = ref.read(logged_usernotifyer).value;
+    final unremovable = c_tricount.unremovable_list_const(loggedUser!.id);
 
     final usersListAsync = ref.watch(users_listnotifyer);
     final currentUserAsync = ref.watch(logged_usernotifyer);

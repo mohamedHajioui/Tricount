@@ -53,18 +53,19 @@ class Tricount {
   String get creatorName =>
       findParticipant(creator)?.fullName ?? 'Unknown';
 
-  List<int> unremovable_list_const(){
-    List<int> unremovable = [];
-    
+  List<int> unremovable_list_const(int loggeduser){
+    Set<int> unremovable ={};
+    unremovable.add(creator);
+    unremovable.add(loggeduser);
     depenses.forEach ((Depense depense) {
+      unremovable.add(depense.initiator);
       depense.repartitions.forEach((Repartition repartition){
-        if( repartition.user != id){
           unremovable.add(repartition.user);
-        }
+        
       });
     });
     
-    return unremovable;
+    return unremovable.toList();
   }
 
   static Future<bool> isTitleUnique(String title, int? currentId, WidgetRef ref) async {
