@@ -58,10 +58,11 @@ class Tricount {
     
     depenses.forEach ((Depense depense) {
       depense.repartitions.forEach((Repartition repartition){
-        if( repartition.user != id){
           unremovable.add(repartition.user);
-        }
+        
       });
+      unremovable.add(creator);
+      
     });
     
     return unremovable;

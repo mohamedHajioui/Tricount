@@ -121,8 +121,7 @@ class _AddTricountPageState extends ConsumerState<AddTricountPage> {
 
   @override
   Widget build(BuildContext context) {
-    
-    
+
     final c_tricount = tricount();
     final isEditing = widget.tricountId != 0;
     final unremovable = c_tricount.unremovable_list_const();

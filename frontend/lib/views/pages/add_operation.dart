@@ -462,6 +462,8 @@ class _AddOperationPageState extends ConsumerState<AddOperationPage> {
   // Méthode pour la section de répartition
   Widget _repartitionsSection(BuildContext context) {
     final tricount = ref.watch(currentTricountProvider).tricount;
+    ref.watch(currentTricountProvider).refresh();
+    
     if (tricount == null) return Container();
 
     return Column(

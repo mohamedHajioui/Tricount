@@ -4,6 +4,8 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../../providers/auth_service_provider.dart';
 import '../../models/user.dart';
 import 'package:prbd_2425_a07/providers/tricount_list_provider.dart';
+import 'package:prbd_2425_a07/providers/get_current_user.dart';
+
 
 
 class SignupScreen extends ConsumerStatefulWidget {
@@ -71,12 +73,13 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       pwdCtrl.text.trim(),
     );
     
+    _login(emailCtrl.text.trim(),pwdCtrl.text.trim());
     debugPrint('👉 SUBMIT called email=${emailCtrl.text}');
   }
   
-  void _refresh(){
-    final tricountListNotifier = ref.read(tricountnotifyer.notifier);
-    tricountListNotifier.refreshTriCountList();
+  void _login(email,password) async{
+    await ref.read(authUserProvider.notifier).login(email, password);
+    await ref.refresh(logged_usernotifyer.future);
 
   }
 

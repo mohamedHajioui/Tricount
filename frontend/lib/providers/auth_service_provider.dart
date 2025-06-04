@@ -24,7 +24,6 @@ class AuthUserNotifier extends AsyncNotifier<User?> {
     state = await AsyncValue.guard(() => 
         ref.read(authServiceProvider).signup(email, fullName, iban, password));
     ref.refresh(tricountnotifyer);
-    
   }
   
 
