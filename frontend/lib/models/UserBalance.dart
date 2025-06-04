@@ -5,7 +5,6 @@ class UserBalance {
   final double paid;
   final double due;
   final double balance;
-  //final List<User> participants;
   
 
   UserBalance({
@@ -13,7 +12,6 @@ class UserBalance {
     required this.paid,
     required this.due,
     required this.balance,
-    //required this.participants
     
   });
 
