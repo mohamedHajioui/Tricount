@@ -4,6 +4,8 @@ import 'package:prbd_2425_a07/core/services/balance_service.dart';
 import 'package:prbd_2425_a07/core/services/deletetricount_service.dart';
 import 'package:prbd_2425_a07/providers/tricount_list_provider.dart';
 import 'package:prbd_2425_a07/providers/current_tricount_provider.dart';
+import 'package:prbd_2425_a07/providers/auth_service_provider.dart';
+
 import 'package:prbd_2425_a07/providers/delete_tricount_provider.dart';
 import 'package:prbd_2425_a07/views/pages/add_operation.dart';
 import 'package:prbd_2425_a07/views/pages/add_tricount.dart';
@@ -40,7 +42,9 @@ class _TricountViewState extends ConsumerState<TricountView> {
   // Fonction pour afficher le contenu quand le tricount est vide
   Widget _buildEmptyState() {
     final tricountState = ref.watch(currentTricountProvider);
+    
     final tricount = tricountState.tricount;
+    
     return Center(
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 20),
@@ -117,6 +121,8 @@ class _TricountViewState extends ConsumerState<TricountView> {
     }
 
     final tricount = tricountState.tricount;
+    final currentUser = ref.watch(authUserProvider).value;
+    final iscreator = currentUser?.id == tricount!.creator;
     if (tricount == null) {
       return const Scaffold(
         body: Center(child: Text('Tricount not found')),
@@ -158,7 +164,7 @@ class _TricountViewState extends ConsumerState<TricountView> {
           // Bouton de suppression
           IconButton(
             icon: const Icon(Icons.delete),
-            onPressed: () {
+            onPressed: iscreator ? () {
               // Afficher une boîte de dialogue de confirmation
               showDialog(
                 context: context,
@@ -196,7 +202,7 @@ class _TricountViewState extends ConsumerState<TricountView> {
                   );
                 },
               );
-            },
+            }:null,
           ),
         ],
       ),

@@ -59,8 +59,13 @@ class TricountCard extends StatelessWidget {
             ),
             SizedBox(height: 8),
             Text(
-              tricount.description ?? "No description",
+              (tricount.description?.trim().isEmpty ?? true) ? "No description" : tricount.description!,
               style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              "by ${tricount.creatorName}",
+              style: TextStyle(fontSize: 12, color: Colors.grey[500], fontStyle: FontStyle.italic),
             ),
           ],
         ),
