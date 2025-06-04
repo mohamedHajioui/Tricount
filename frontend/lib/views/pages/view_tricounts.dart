@@ -4,6 +4,7 @@ import 'package:prbd_2425_a07/models/tricount.dart';
 import 'package:prbd_2425_a07/providers/auth_service_provider.dart';
 import 'package:prbd_2425_a07/providers/tricount_list_provider.dart';
 import 'package:prbd_2425_a07/views/pages/add_tricount.dart';
+import 'package:prbd_2425_a07/views/pages/login_screen.dart';
 import '../widgets/tricound_card.dart';
 import 'package:prbd_2425_a07/providers/theme_provider.dart';
 import 'package:prbd_2425_a07/providers/reset_db_provider.dart';
@@ -15,15 +16,44 @@ import '../widgets/no_tricount_view.dart';
 class TricountListPage extends ConsumerWidget {
   static const routeName = '/tricounts';
   const TricountListPage({super.key});
+  
+  
+  
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tricountsAsync = ref.watch(tricountnotifyer);
     
-    final current_user = ref.read(authUserProvider).value;
+    Future<void> _showResetConfirmationDialog() async {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text('Confirmation'),
+          content: const Text('Are you sure you want to reset the database?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('yes'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('No'),
+            ),
+          ],
+        ),
+      );
+      if(confirmed == true){
+        ref.read(resetDbControllerProvider.notifier).reset(context);
+        ref.read(authUserProvider.notifier).logout();
+        Navigator.pushReplacementNamed(context, '/login');
+      }
+    }
     
+    
+    final current_user = ref.read(authUserProvider).value;
     final reset = ref.watch(resetDbControllerProvider);
     final bool loadingReset = reset.isLoading;
+    
 
 
     return Scaffold(
@@ -101,11 +131,7 @@ class TricountListPage extends ConsumerWidget {
             ListTile(
               leading: Icon(Icons.recycling),
               title: Text('Reset Database'),
-              onTap: () async {
-                ref.read(resetDbControllerProvider.notifier).reset(context);
-                ref.read(authUserProvider.notifier).logout();
-                Navigator.pushReplacementNamed(context, '/login');
-              },
+              onTap: _showResetConfirmationDialog,
             ),
 
             ListTile(

@@ -24,6 +24,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   bool _emailDirty = false;
   bool _pwdDirty = false;
   bool _triedLogin = false;
+  
+  
 
   @override
   void dispose() {
@@ -66,6 +68,29 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         ],
       ),
     );
+  }
+  
+  Future<void> _showResetConfirmationDialog() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Confirmation'),
+        content: const Text('Are you sure you want to reset the database?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('yes'),
+          ),
+          TextButton(
+              onPressed: () => Navigator.of(context).pop(false), 
+              child: const Text('No'),
+          ),
+        ],
+      ),
+    );
+    if(confirmed == true){
+      ref.read(resetDbControllerProvider.notifier).reset(context);
+    }
   }
 
 
@@ -188,9 +213,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                 onReset: loadingReset
                     ? null
-                    : () => ref
-                    .read(resetDbControllerProvider.notifier)
-                    .reset(context),
+                    : _showResetConfirmationDialog,
                 showResetLoader: loadingReset,
               ),
             ],
